@@ -30,7 +30,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <BrowserRouter>
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
           <Routes>
             {/* Ruta de login fuera del layout */}
             <Route path="/login" element={<Login />} />

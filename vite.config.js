@@ -5,6 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/detitular/',
   server: {
     port: 5174,
   },
@@ -22,8 +23,8 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
-        scope: '/',
-        start_url: '/',
+        scope: '/detitular/',
+        start_url: '/detitular/',
         icons: [
           {
             src: '/icons/icon-72x72.svg',
