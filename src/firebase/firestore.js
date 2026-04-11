@@ -68,6 +68,15 @@ export const updateUserPlan = async (userId, planData) => {
   })
 }
 
+/**
+ * Elimina el documento de un usuario en Firestore (solo admin)
+ * Nota: no elimina la cuenta de Firebase Auth, solo los datos del perfil.
+ */
+export const deleteUser = async (userId) => {
+  const userRef = doc(db, 'users', userId)
+  await deleteDoc(userRef)
+}
+
 // ============================================
 // EVENTOS
 // ============================================

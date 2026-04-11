@@ -5,7 +5,8 @@ import {
   updateUser,
   updateUserPlan,
   getAllUsers,
-  getPlayerStats
+  getPlayerStats,
+  deleteUser
 } from '../firebase/firestore'
 import { uploadProfileImage } from '../firebase/storage'
 import { useAuth } from '../context/AuthContext'
@@ -108,6 +109,36 @@ export const useUpdateUserRole = () => {
   return useMutation({
     mutationFn: ({ userId, role }) => updateUser(userId, { role }),
     onSuccess: (_, { userId }) => {
+      queryClient.invalidateQueries({ queryKey: ['user', userId] })
+      queryClient.invalidateQueries({ queryKey: ['users', 'all'] })
+    }
+  })
+}
+
+/**
+ * Hook para activar/desactivar un usuario (admin)
+ */
+export const useToggleUserDisabled = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ userId, disabled }) => updateUser(userId, { disabled }),
+    onSuccess: (_, { userId }) => {
+      queryClient.invalidateQueries({ queryKey: ['user', userId] })
+      queryClient.invalidateQueries({ queryKey: ['users', 'all'] })
+    }
+  })
+}
+
+/**
+ * Hook para eliminar un usuario (admin)
+ */
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (userId) => deleteUser(userId),
+    onSuccess: (_, userId) => {
       queryClient.invalidateQueries({ queryKey: ['user', userId] })
       queryClient.invalidateQueries({ queryKey: ['users', 'all'] })
     }

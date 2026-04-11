@@ -8,15 +8,20 @@ import {
   CreditCard,
   ChevronRight,
   Check,
-  X
+  X,
+  Trash2,
+  AlertTriangle
 } from '../../utils/icons'
 import { Card, Button, Badge, Avatar, EmptyState, Skeleton, Modal } from '../../components/ui'
 import Input, { Select } from '../../components/ui/Input'
 import {
   useAllUsers,
   useUpdateUserPlan,
-  useUpdateUserRole
+  useUpdateUserRole,
+  useToggleUserDisabled,
+  useDeleteUser
 } from '../../hooks/usePlayer'
+import { useAuth } from '../../context/AuthContext'
 import { PLANS } from '../../utils/constants'
 import { formatDate } from '../../utils/helpers'
 import toast from 'react-hot-toast'
@@ -25,10 +30,14 @@ const AdminUsuarios = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedUser, setSelectedUser] = useState(null)
   const [showPlanModal, setShowPlanModal] = useState(false)
+  const [userToDelete, setUserToDelete] = useState(null)
 
+  const { user: currentUser } = useAuth()
   const { data: users, isLoading } = useAllUsers()
   const updatePlan = useUpdateUserPlan()
   const updateRole = useUpdateUserRole()
+  const toggleDisabled = useToggleUserDisabled()
+  const deleteUserMutation = useDeleteUser()
 
   // Filtrar usuarios
   const filteredUsers = users?.filter(user => {
@@ -101,6 +110,32 @@ const AdminUsuarios = () => {
     }
   }
 
+  const handleToggleDisabled = async (user) => {
+    const nextDisabled = !user.disabled
+    const action = nextDisabled ? 'desactivar' : 'reactivar'
+
+    if (!window.confirm(`¿${action.charAt(0).toUpperCase() + action.slice(1)} a ${user.nombre || user.displayName}?`)) return
+
+    try {
+      await toggleDisabled.mutateAsync({ userId: user.id, disabled: nextDisabled })
+      toast.success(nextDisabled ? 'Usuario desactivado' : 'Usuario reactivado')
+    } catch (error) {
+      toast.error(`Error al ${action} usuario`)
+    }
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return
+
+    try {
+      await deleteUserMutation.mutateAsync(userToDelete.id)
+      toast.success('Usuario eliminado')
+      setUserToDelete(null)
+    } catch (error) {
+      toast.error('Error al eliminar usuario')
+    }
+  }
+
   return (
     <div className="px-6 md:px-12 pt-10 pb-12 md:pt-14 md:pb-20 max-w-6xl mx-auto">
       {/* Header */}
@@ -156,9 +191,12 @@ const AdminUsuarios = () => {
             <UserCard
               key={user.id}
               user={user}
+              isSelf={user.id === currentUser?.uid}
               onToggleRole={() => handleToggleRole(user)}
               onManagePlan={() => handleOpenPlanModal(user)}
               onDeactivatePlan={() => handleDeactivatePlan(user)}
+              onToggleDisabled={() => handleToggleDisabled(user)}
+              onDelete={() => setUserToDelete(user)}
             />
           ))}
         </div>
@@ -185,16 +223,33 @@ const AdminUsuarios = () => {
         onActivate={handleActivatePlan}
         isLoading={updatePlan.isPending}
       />
+
+      {/* Modal de confirmación de eliminación */}
+      <DeleteUserModal
+        user={userToDelete}
+        onClose={() => setUserToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        isLoading={deleteUserMutation.isPending}
+      />
     </div>
   )
 }
 
 // Tarjeta de usuario
-const UserCard = ({ user, onToggleRole, onManagePlan, onDeactivatePlan }) => {
+const UserCard = ({
+  user,
+  isSelf,
+  onToggleRole,
+  onManagePlan,
+  onDeactivatePlan,
+  onToggleDisabled,
+  onDelete
+}) => {
   const hasPlan = user.plan?.active
+  const isDisabled = !!user.disabled
 
   return (
-    <Card>
+    <Card className={isDisabled ? 'opacity-60' : ''}>
       <div className="flex items-center gap-4">
         <Avatar
           src={user.photoURL}
@@ -203,13 +258,18 @@ const UserCard = ({ user, onToggleRole, onManagePlan, onDeactivatePlan }) => {
         />
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-medium text-zinc-900 dark:text-zinc-50 truncate">
               {user.nombre || user.displayName || 'Sin nombre'}
             </h3>
             <Badge variant={user.role} size="sm">
               {user.role === 'admin' ? 'Admin' : 'Jugador'}
             </Badge>
+            {isDisabled && (
+              <Badge variant="danger" size="sm">
+                Desactivado
+              </Badge>
+            )}
           </div>
           <p className="text-sm text-zinc-400 truncate">{user.email}</p>
           {user.posicionPrincipal && (
@@ -264,6 +324,24 @@ const UserCard = ({ user, onToggleRole, onManagePlan, onDeactivatePlan }) => {
               <CreditCard className="w-4 h-4" />
             </button>
           )}
+
+          <button
+            onClick={onToggleDisabled}
+            disabled={isSelf}
+            className="p-2 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg text-amber-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            title={isSelf ? 'No puedes desactivarte a ti mismo' : (isDisabled ? 'Reactivar usuario' : 'Desactivar usuario')}
+          >
+            {isDisabled ? <Check className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+          </button>
+
+          <button
+            onClick={onDelete}
+            disabled={isSelf}
+            className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-red-500 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            title={isSelf ? 'No puedes eliminarte a ti mismo' : 'Eliminar usuario'}
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </Card>
@@ -312,6 +390,48 @@ const PlanModal = ({ isOpen, onClose, user, onActivate, isLoading }) => {
                 <ChevronRight className="w-5 h-5 text-zinc-400" />
               </button>
             ))}
+          </div>
+        </div>
+      )}
+    </Modal>
+  )
+}
+
+// Modal de confirmación de eliminación
+const DeleteUserModal = ({ user, onClose, onConfirm, isLoading }) => {
+  return (
+    <Modal
+      isOpen={!!user}
+      onClose={onClose}
+      title="Eliminar usuario"
+      size="sm"
+    >
+      {user && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
+            <Avatar src={user.photoURL} name={user.nombre || user.displayName} size="md" />
+            <div className="min-w-0">
+              <p className="font-medium text-zinc-900 dark:text-zinc-50 truncate">
+                {user.nombre || user.displayName}
+              </p>
+              <p className="text-sm text-zinc-400 truncate">{user.email}</p>
+            </div>
+          </div>
+
+          <div className="flex gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300">
+            <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <p className="text-sm">
+              Esta acción eliminará los datos del perfil del usuario. No se puede deshacer.
+            </p>
+          </div>
+
+          <div className="flex gap-2 justify-end">
+            <Button variant="secondary" onClick={onClose} disabled={isLoading}>
+              Cancelar
+            </Button>
+            <Button variant="danger" onClick={onConfirm} loading={isLoading}>
+              Eliminar
+            </Button>
           </div>
         </div>
       )}
