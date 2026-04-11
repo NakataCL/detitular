@@ -1,0 +1,23 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Fotos de perfil de usuarios
+    match /users/{userId}/{allPaths=**} {
+      // El usuario puede leer/escribir sus propias fotos
+      allow read: if true;
+      allow write: if request.auth.uid == userId
+                   && request.resource.size < 5 * 1024 * 1024 // máximo 5MB
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // Experiencias/Galería
+    match /experiences/{category}/{allPaths=**} {
+      // Todos pueden leer
+      allow read: if true;
+      // Solo admin puede escribir
+      allow write: if request.auth != null
+                   && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+                   && request.resource.size < 10 * 1024 * 1024; // máximo 10MB
+    }
+  }
+}

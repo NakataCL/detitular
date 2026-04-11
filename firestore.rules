@@ -1,0 +1,43 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Función helper para verificar si es admin
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.token.email == 'luis.leon.cardenas@gmail.com'
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
+    // Usuarios: cada uno lee/edita su propio perfil, autenticados pueden listar, admin lee todos
+    match /users/{userId} {
+      allow read, write: if request.auth.uid == userId;
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Eventos: cualquiera lee los activos, solo admin escribe
+    match /events/{eventId} {
+      allow read: if resource.data.status == 'active';
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['currentSlots']);
+      allow read, write: if isAdmin();
+    }
+
+    // Inscripciones: el usuario gestiona las suyas, autenticados pueden listar, admin gestiona todas
+    match /registrations/{regId} {
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if request.auth.uid == resource.data.userId;
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Experiencias: todos leen, solo admin escribe
+    match /experiences/{expId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
