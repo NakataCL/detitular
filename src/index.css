@@ -2,16 +2,16 @@
 
 /* Modern minimalist theme */
 @theme {
-  --color-primary-50: #ecfdf5;
-  --color-primary-100: #d1fae5;
-  --color-primary-200: #a7f3d0;
-  --color-primary-300: #6ee7b7;
-  --color-primary-400: #34d399;
-  --color-primary-500: #10b981;
-  --color-primary-600: #059669;
-  --color-primary-700: #047857;
-  --color-primary-800: #065f46;
-  --color-primary-900: #064e3b;
+  --color-primary-50: #fef2f2;
+  --color-primary-100: #fee2e2;
+  --color-primary-200: #fecaca;
+  --color-primary-300: #fca5a5;
+  --color-primary-400: #f87171;
+  --color-primary-500: #ef4444;
+  --color-primary-600: #dc2626;
+  --color-primary-700: #b91c1c;
+  --color-primary-800: #991b1b;
+  --color-primary-900: #7f1d1d;
 
   --color-accent-gold: #f59e0b;
   --color-accent-red: #ef4444;
@@ -89,12 +89,12 @@
   }
 }
 
-@keyframes pulse-green {
+@keyframes pulse-primary {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.3);
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.3);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+    box-shadow: 0 0 0 8px rgba(220, 38, 38, 0);
   }
 }
 
@@ -106,8 +106,8 @@
   animation: slideUp 0.35s ease-out;
 }
 
-.animate-pulse-green {
-  animation: pulse-green 2s infinite;
+.animate-pulse-primary {
+  animation: pulse-primary 2s infinite;
 }
 
 /* Skeleton loader */
@@ -177,7 +177,7 @@
 
 /* Gradient - subtle */
 .gradient-primary {
-  background: linear-gradient(135deg, #064e3b 0%, #047857 50%, #10b981 100%);
+  background: linear-gradient(135deg, #7f1d1d 0%, #b91c1c 50%, #ef4444 100%);
 }
 
 .gradient-gold {
@@ -186,7 +186,7 @@
 
 /* Badge colors */
 .badge-partido {
-  background-color: #10b981;
+  background-color: #dc2626;
   color: white;
 }
 

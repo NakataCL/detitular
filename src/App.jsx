@@ -106,7 +106,7 @@ function App() {
             },
             success: {
               iconTheme: {
-                primary: '#2ecc71',
+                primary: '#dc2626',
                 secondary: '#fff'
               }
             },

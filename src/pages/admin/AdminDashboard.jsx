@@ -32,7 +32,7 @@ const AdminDashboard = () => {
       title: 'Gestionar Usuarios',
       description: 'Ver y administrar jugadores',
       icon: Users,
-      color: 'bg-green-500',
+      color: 'bg-red-500',
       action: () => navigate('/admin/usuarios')
     },
     {
@@ -189,8 +189,8 @@ const AdminDashboard = () => {
 
         <Card hover onClick={() => navigate('/admin/usuarios')} className="cursor-pointer">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-green-100 dark:bg-green-900/30">
-              <Users className="w-6 h-6 text-green-600" />
+            <div className="p-3 rounded-xl bg-red-100 dark:bg-red-900/30">
+              <Users className="w-6 h-6 text-red-600" />
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
@@ -212,7 +212,7 @@ const AdminDashboard = () => {
 const StatCard = ({ title, value, icon: Icon, color }) => {
   const colors = {
     blue: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30',
-    green: 'text-green-600 bg-green-100 dark:bg-green-900/30',
+    green: 'text-red-600 bg-red-100 dark:bg-red-900/30',
     amber: 'text-amber-600 bg-amber-100 dark:bg-amber-900/30',
     purple: 'text-purple-600 bg-purple-100 dark:bg-purple-900/30'
   }

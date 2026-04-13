@@ -14,6 +14,7 @@ import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { APP_NAME } from '../../utils/constants'
 import Avatar from '../ui/Avatar'
+import logo from '../../assets/logo.png'
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false)
@@ -46,26 +47,34 @@ const Sidebar = () => {
       }`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-5 h-16">
-        {!collapsed && (
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-zinc-900 dark:bg-zinc-50 rounded-lg flex items-center justify-center">
-              <span className="text-white dark:text-zinc-900 font-bold text-sm">FA</span>
+      <div className={`flex flex-col items-center px-4 ${collapsed ? 'py-4' : 'pt-6 pb-4'}`}>
+        {collapsed ? (
+          <img src={logo} alt={APP_NAME} className="w-10 h-10 rounded-lg object-cover mb-2" />
+        ) : (
+          <>
+            <img src={logo} alt={APP_NAME} className="w-32 h-32 rounded-2xl object-cover mb-2" />
+            <div className="flex items-center justify-center gap-1.5 w-full">
+              <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-50 tracking-tight">
+                {APP_NAME}
+              </span>
+              <button
+                onClick={() => setCollapsed(!collapsed)}
+                className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
             </div>
-            <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-50 tracking-tight">
-              {APP_NAME}
-            </span>
-          </div>
+          </>
         )}
 
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 transition-colors"
-        >
-          <ChevronLeft
-            className={`w-4 h-4 transition-transform duration-200 ${collapsed ? 'rotate-180' : ''}`}
-          />
-        </button>
+        {collapsed && (
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4 rotate-180" />
+          </button>
+        )}
       </div>
 
       {/* Navigation */}

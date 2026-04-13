@@ -5,6 +5,7 @@ import { ArrowLeft, LogIn } from '../../utils/icons'
 import { useAuth } from '../../context/AuthContext'
 import { APP_NAME } from '../../utils/constants'
 import Avatar from '../ui/Avatar'
+import logo from '../../assets/logo.png'
 
 const Header = ({
   title = null,
@@ -65,9 +66,7 @@ const Header = ({
               <ArrowLeft className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
             </motion.button>
           ) : (
-            <div className="w-7 h-7 bg-zinc-900 dark:bg-zinc-50 rounded-lg flex items-center justify-center">
-              <span className="text-white dark:text-zinc-900 font-bold text-xs">FA</span>
-            </div>
+            <img src={logo} alt={APP_NAME} className="w-9 h-9 rounded-lg object-cover" />
           )}
 
           <h1 className="font-semibold text-zinc-900 dark:text-zinc-50 text-[15px] tracking-tight">

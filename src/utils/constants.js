@@ -7,9 +7,9 @@ export const APP_SHORT_NAME = import.meta.env.VITE_APP_SHORT_NAME || 'FutbolAcad
 // Colores del tema
 export const THEME_COLORS = {
   primary: {
-    dark: '#1a472a',
-    main: '#2ecc71',
-    light: '#a5d6a7'
+    dark: '#7f1d1d',
+    main: '#dc2626',
+    light: '#fecaca'
   },
   accent: {
     gold: '#f39c12',
@@ -22,7 +22,7 @@ export const THEME_COLORS = {
 export const EVENT_TYPES = {
   partido: {
     label: 'Partido',
-    color: '#2ecc71',
+    color: '#dc2626',
     bgClass: 'badge-partido'
   },
   torneo: {

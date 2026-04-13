@@ -165,7 +165,7 @@ const AdminUsuarios = () => {
           <p className="text-xs text-zinc-400">Total usuarios</p>
         </Card>
         <Card className="text-center py-4">
-          <p className="text-2xl font-bold text-green-600">
+          <p className="text-2xl font-bold text-red-600">
             {users?.filter(u => u.plan?.active).length || 0}
           </p>
           <p className="text-xs text-zinc-400">Con plan activo</p>
@@ -318,7 +318,7 @@ const UserCard = ({
           ) : (
             <button
               onClick={onManagePlan}
-              className="p-2 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg text-green-600"
+              className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-red-600"
               title="Activar plan"
             >
               <CreditCard className="w-4 h-4" />

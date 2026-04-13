@@ -19,7 +19,7 @@ export default defineConfig({
         name: 'Academia de Fútbol',
         short_name: 'FutbolAcademy',
         description: 'Aplicación oficial de la Academia de Fútbol - Gestión de eventos, inscripciones y experiencias',
-        theme_color: '#1a472a',
+        theme_color: '#991b1b',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',

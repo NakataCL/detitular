@@ -33,7 +33,7 @@ const Home = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-medium mb-6">
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 rounded-full text-xs font-medium mb-6">
           <Zap className="w-3 h-3" />
           Temporada 2026 activa
         </div>
@@ -191,7 +191,7 @@ const Home = () => {
           transition={{ delay: 0.25 }}
         >
           <div className="relative overflow-hidden rounded-2xl bg-zinc-900 dark:bg-zinc-800/80 p-10 md:p-14">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl" />
+            <div className="absolute top-0 right-0 w-48 h-48 bg-red-500/10 rounded-full blur-3xl" />
             <div className="relative">
               <h3 className="text-xl font-semibold text-white mb-2">
                 ¿Listo para jugar?
