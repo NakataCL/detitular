@@ -61,7 +61,8 @@ const Header = ({
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={handleBack}
-              className="p-1.5 -ml-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              aria-label="Volver"
+              className="p-2.5 -ml-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 min-h-[44px] min-w-[44px] inline-flex items-center justify-center"
             >
               <ArrowLeft className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
             </motion.button>

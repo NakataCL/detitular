@@ -28,6 +28,7 @@ import {
   faImage,
   faLink,
   faList,
+  faLock,
   faLocationDot,
   faMagnifyingGlass,
   faMagnifyingGlassMinus,
@@ -82,6 +83,7 @@ export const Home = createIcon(faHouse, 'Home')
 export const Image = createIcon(faImage, 'Image')
 export const Link = createIcon(faLink, 'Link')
 export const List = createIcon(faList, 'List')
+export const Lock = createIcon(faLock, 'Lock')
 export const Loader2 = createIcon(faSpinner, 'Loader2')
 export const LogIn = createIcon(faRightToBracket, 'LogIn')
 export const LogOut = createIcon(faRightFromBracket, 'LogOut')

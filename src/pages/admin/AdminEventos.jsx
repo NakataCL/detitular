@@ -8,22 +8,21 @@ import {
   Edit2,
   Trash2,
   Users,
-  Calendar,
-  MoreVertical,
-  Eye
+  Eye,
+  Lock
 } from '../../utils/icons'
-import { Card, Button, Badge, EmptyState, Skeleton, Modal, Avatar } from '../../components/ui'
+import { Card, Button, Badge, EmptyState, Skeleton } from '../../components/ui'
 import Input from '../../components/ui/Input'
-import { EventForm } from '../../components/events'
+import { EventForm, EventAttendeesManager } from '../../components/events'
 import {
   useAllEvents,
   useCreateEvent,
   useUpdateEvent,
   useDeleteEvent
 } from '../../hooks/useEvents'
-import { useEventRegistrations, useMarkAttendance } from '../../hooks/useRegistrations'
 import { useAuth } from '../../context/AuthContext'
 import { formatShortDate, formatSlots } from '../../utils/helpers'
+import { migrateLegacyEvents } from '../../firebase/firestore'
 import { EVENT_TYPES } from '../../utils/constants'
 import toast from 'react-hot-toast'
 
@@ -34,11 +33,30 @@ const AdminEventos = () => {
   const [showForm, setShowForm] = useState(false)
   const [editingEvent, setEditingEvent] = useState(null)
   const [viewingEventId, setViewingEventId] = useState(null)
+  const [migrating, setMigrating] = useState(false)
 
   const { data: events, isLoading } = useAllEvents()
   const createEvent = useCreateEvent()
   const updateEvent = useUpdateEvent()
   const deleteEvent = useDeleteEvent()
+
+  // Detectar eventos que necesitan backfill (no tienen isPrivate o registeredUserIds)
+  const legacyCount = (events || []).filter(
+    e => e.isPrivate === undefined || !Array.isArray(e.registeredUserIds)
+  ).length
+
+  const handleMigrate = async () => {
+    if (!window.confirm(`Se actualizarán ${legacyCount} evento(s) con los nuevos campos de privacidad. ¿Continuar?`)) return
+    setMigrating(true)
+    try {
+      const { migrated } = await migrateLegacyEvents()
+      toast.success(`Migrados ${migrated} evento(s)`)
+    } catch (error) {
+      toast.error(error.message || 'Error en la migración')
+    } finally {
+      setMigrating(false)
+    }
+  }
 
   // Filtrar eventos
   const filteredEvents = events?.filter(event =>
@@ -98,13 +116,29 @@ const AdminEventos = () => {
         </Button>
       </div>
 
+      {/* Banner de migración — se auto-oculta cuando no hay eventos legacy */}
+      {legacyCount > 0 && (
+        <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          <p className="text-sm text-amber-800 dark:text-amber-200">
+            Hay {legacyCount} evento(s) sin los campos de privacidad. Ejecuta la migración para habilitarlos.
+          </p>
+          <Button size="sm" variant="outline" loading={migrating} onClick={handleMigrate} className="flex-shrink-0">
+            Migrar eventos antiguos
+          </Button>
+        </div>
+      )}
+
       {/* Búsqueda */}
       <div className="mb-8">
         <Input
+          type="search"
           placeholder="Buscar eventos..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           icon={Search}
+          inputMode="search"
+          autoComplete="off"
+          enterKeyHint="search"
         />
       </div>
 
@@ -159,11 +193,13 @@ const AdminEventos = () => {
         isLoading={updateEvent.isPending}
       />
 
-      {/* Modal de ver inscripciones */}
-      <RegistrationsModal
-        eventId={viewingEventId}
-        onClose={() => setViewingEventId(null)}
-      />
+      {/* Gestor de inscritos (admin) */}
+      {viewingEventId && (
+        <EventAttendeesManager
+          eventId={viewingEventId}
+          onClose={() => setViewingEventId(null)}
+        />
+      )}
     </div>
   )
 }
@@ -174,9 +210,70 @@ const EventAdminCard = ({ event, onEdit, onDelete, onViewRegistrations, onView }
   const eventDate = event.date?.toDate ? event.date.toDate() : new Date(event.date)
   const isPast = eventDate < new Date()
 
+  const actionButtons = (
+    <div className="flex items-center gap-1">
+      <button
+        onClick={onViewRegistrations}
+        className="p-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-400"
+        title="Gestionar inscritos"
+        aria-label="Gestionar inscritos"
+      >
+        <Users className="w-4 h-4" />
+      </button>
+      <button
+        onClick={onView}
+        className="p-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-400"
+        title="Ver"
+        aria-label="Ver evento"
+      >
+        <Eye className="w-4 h-4" />
+      </button>
+      <button
+        onClick={onEdit}
+        className="p-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-400"
+        title="Editar"
+        aria-label="Editar evento"
+      >
+        <Edit2 className="w-4 h-4" />
+      </button>
+      <button
+        onClick={onDelete}
+        className="p-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-red-500"
+        title="Eliminar"
+        aria-label="Eliminar evento"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
+  )
+
+  const slotsButtonDesktop = (
+    <button
+      onClick={onViewRegistrations}
+      className="flex-shrink-0 text-center p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+    >
+      <div className="flex items-center gap-1 text-primary-600 mb-1">
+        <Users className="w-4 h-4" />
+        <span className="font-bold">{formatSlots(event)}</span>
+      </div>
+      <span className="text-xs text-zinc-400">inscritos</span>
+    </button>
+  )
+
+  const slotsButtonMobile = (
+    <button
+      onClick={onViewRegistrations}
+      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+    >
+      <Users className="w-3.5 h-3.5 text-primary-600" />
+      <span className="text-sm font-bold text-primary-600">{formatSlots(event)}</span>
+      <span className="text-xs text-zinc-400">inscritos</span>
+    </button>
+  )
+
   return (
     <Card>
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3 sm:gap-4">
         {/* Fecha */}
         <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex flex-col items-center justify-center text-white ${eventType.bgClass}`}>
           <span className="text-lg font-bold">{eventDate.getDate()}</span>
@@ -187,140 +284,45 @@ const EventAdminCard = ({ event, onEdit, onDelete, onViewRegistrations, onView }
 
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
-                {event.title}
-              </h3>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant={event.type} size="sm">
-                  {eventType.label}
-                </Badge>
-                {isPast && (
-                  <Badge variant="secondary" size="sm">
-                    Finalizado
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            {/* Acciones */}
-            <div className="flex items-center gap-1">
-              <button
-                onClick={onView}
-                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-400"
-                title="Ver"
-              >
-                <Eye className="w-4 h-4" />
-              </button>
-              <button
-                onClick={onEdit}
-                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-400"
-                title="Editar"
-              >
-                <Edit2 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={onDelete}
-                className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-red-500"
-                title="Eliminar"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
+          <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 break-words">
+            {event.title}
+          </h3>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <Badge variant={event.type} size="sm">
+              {eventType.label}
+            </Badge>
+            {event.isPrivate && (
+              <Badge variant="secondary" size="sm">
+                <Lock className="w-3 h-3" />
+                Privado
+              </Badge>
+            )}
+            {isPast && (
+              <Badge variant="secondary" size="sm">
+                Finalizado
+              </Badge>
+            )}
           </div>
 
-          <div className="flex items-center gap-4 mt-2 text-sm text-zinc-400">
+          <div className="flex items-center gap-x-4 gap-y-1 mt-2 text-sm text-zinc-400 flex-wrap">
             <span>{formatShortDate(event.date)}</span>
-            <span>{event.location || 'Sin ubicación'}</span>
+            <span className="break-words">{event.location || 'Sin ubicación'}</span>
+          </div>
+
+          {/* Mobile: acciones (arriba) + cupos compacto (abajo derecha) en stack */}
+          <div className="mt-3 space-y-2 sm:hidden">
+            <div className="flex justify-start">{actionButtons}</div>
+            <div className="flex justify-end">{slotsButtonMobile}</div>
           </div>
         </div>
 
-        {/* Cupos */}
-        <button
-          onClick={onViewRegistrations}
-          className="flex-shrink-0 text-center p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-        >
-          <div className="flex items-center gap-1 text-primary-600 mb-1">
-            <Users className="w-4 h-4" />
-            <span className="font-bold">{formatSlots(event)}</span>
-          </div>
-          <span className="text-xs text-zinc-400">inscritos</span>
-        </button>
+        {/* Desktop: acciones + cupos a la derecha */}
+        <div className="hidden sm:flex items-start gap-2 flex-shrink-0">
+          {actionButtons}
+          {slotsButtonDesktop}
+        </div>
       </div>
     </Card>
-  )
-}
-
-// Modal de inscripciones
-const RegistrationsModal = ({ eventId, onClose }) => {
-  const { data: registrations, isLoading } = useEventRegistrations(eventId)
-  const markAttendance = useMarkAttendance()
-
-  const handleToggleAttendance = async (registration) => {
-    try {
-      await markAttendance.mutateAsync({
-        registrationId: registration.id,
-        attended: !registration.attended,
-        eventId
-      })
-    } catch (error) {
-      toast.error('Error al actualizar asistencia')
-    }
-  }
-
-  return (
-    <Modal
-      isOpen={!!eventId}
-      onClose={onClose}
-      title="Lista de Inscritos"
-      size="lg"
-    >
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton.UserItem key={i} />
-          ))}
-        </div>
-      ) : registrations?.length > 0 ? (
-        <div className="space-y-2">
-          {registrations.map((reg, index) => (
-            <div
-              key={reg.id}
-              className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-zinc-400 w-6">{index + 1}</span>
-                <Avatar src={reg.userPhoto} name={reg.userName} size="sm" />
-                <div>
-                  <p className="font-medium text-zinc-900 dark:text-zinc-50">
-                    {reg.userName}
-                  </p>
-                  <p className="text-xs text-zinc-400">{reg.userEmail}</p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => handleToggleAttendance(reg)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  reg.attended
-                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                    : 'bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-400'
-                }`}
-              >
-                {reg.attended ? '✓ Asistió' : 'Marcar asistencia'}
-              </button>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <EmptyState
-          icon="users"
-          title="Sin inscritos"
-          description="Aún no hay jugadores inscritos en este evento"
-        />
-      )}
-    </Modal>
   )
 }
 

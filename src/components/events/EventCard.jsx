@@ -1,7 +1,7 @@
 // Tarjeta de evento
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Calendar, MapPin, Users, Clock, ArrowRight } from '../../utils/icons'
+import { Calendar, MapPin, Users, Clock, ArrowRight, Lock } from '../../utils/icons'
 import { Card, Badge, Button, Countdown } from '../ui'
 import { formatShortDate, formatSlots, getEventStatus } from '../../utils/helpers'
 import { EVENT_TYPES, REGISTRATION_STATUS } from '../../utils/constants'
@@ -61,10 +61,18 @@ const EventCard = ({
             </div>
           </div>
 
-          {/* Status badge */}
-          <Badge variant={status} size="sm">
-            {statusConfig.label}
-          </Badge>
+          {/* Status badges */}
+          <div className="flex items-center gap-1.5">
+            {event.isPrivate && (
+              <Badge variant="secondary" size="sm">
+                <Lock className="w-3 h-3" />
+                Privado
+              </Badge>
+            )}
+            <Badge variant={status} size="sm">
+              {statusConfig.label}
+            </Badge>
+          </div>
         </div>
       </Card>
     )
@@ -79,9 +87,17 @@ const EventCard = ({
       <Card hover onClick={handleClick} className="cursor-pointer">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <Badge variant={event.type}>
-            {eventType.label}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant={event.type}>
+              {eventType.label}
+            </Badge>
+            {event.isPrivate && (
+              <Badge variant="secondary" size="sm">
+                <Lock className="w-3 h-3" />
+                Privado
+              </Badge>
+            )}
+          </div>
           <Badge variant={status}>
             {statusConfig.label}
           </Badge>
@@ -134,7 +150,7 @@ const EventCard = ({
         {/* Actions */}
         {showActions && (
           <div className="flex gap-2 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-            {status === 'abierto' && (
+            {status === 'abierto' && !event.isPrivate && (
               <Button
                 fullWidth
                 onClick={handleRegister}
@@ -142,6 +158,12 @@ const EventCard = ({
                 disabled={isRegistering}
               >
                 Inscribirme
+              </Button>
+            )}
+
+            {status === 'abierto' && event.isPrivate && (
+              <Button fullWidth variant="secondary" disabled icon={Lock}>
+                Sólo por invitación
               </Button>
             )}
 

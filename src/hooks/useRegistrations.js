@@ -7,6 +7,8 @@ import {
   getUserEventRegistration,
   cancelRegistration,
   markAttendance,
+  adminAddUserToEvent,
+  adminRemoveUserFromEvent,
   subscribeToUserRegistrations
 } from '../firebase/firestore'
 import { useAuth } from '../context/AuthContext'
@@ -53,16 +55,16 @@ export const useUserEventRegistration = (eventId) => {
 }
 
 /**
- * Hook para crear inscripción
+ * Hook para crear inscripción (auto-inscripción del usuario actual, sólo eventos públicos)
  */
 export const useCreateRegistration = () => {
   const queryClient = useQueryClient()
   const { user, userData } = useAuth()
 
   return useMutation({
-    mutationFn: (eventId) => createRegistration(user.uid, eventId, userData),
+    mutationFn: (eventId) =>
+      createRegistration(user.uid, eventId, userData, { registeredBy: 'self' }),
     onSuccess: (_, eventId) => {
-      // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: ['registrations'] })
       queryClient.invalidateQueries({ queryKey: ['registration', user?.uid, eventId] })
       queryClient.invalidateQueries({ queryKey: ['events'] })
@@ -72,17 +74,54 @@ export const useCreateRegistration = () => {
 }
 
 /**
- * Hook para cancelar inscripción
+ * Hook para cancelar inscripción. Acepta `userId` para mantener sincronía del array en el evento.
  */
 export const useCancelRegistration = () => {
   const queryClient = useQueryClient()
   const { user } = useAuth()
 
   return useMutation({
-    mutationFn: ({ registrationId, eventId }) => cancelRegistration(registrationId, eventId),
+    mutationFn: ({ registrationId, eventId, userId }) =>
+      cancelRegistration(registrationId, eventId, userId || user?.uid),
     onSuccess: (_, { eventId }) => {
       queryClient.invalidateQueries({ queryKey: ['registrations'] })
       queryClient.invalidateQueries({ queryKey: ['registration', user?.uid, eventId] })
+      queryClient.invalidateQueries({ queryKey: ['events'] })
+      queryClient.invalidateQueries({ queryKey: ['event', eventId] })
+    }
+  })
+}
+
+/**
+ * Hook admin: inscribir a otro usuario en un evento (público o privado).
+ */
+export const useAdminAddUserToEvent = () => {
+  const queryClient = useQueryClient()
+  const { user: currentUser } = useAuth()
+
+  return useMutation({
+    mutationFn: ({ eventId, user }) => adminAddUserToEvent(eventId, user, currentUser?.uid),
+    onSuccess: (_, { eventId }) => {
+      queryClient.invalidateQueries({ queryKey: ['registrations'] })
+      queryClient.invalidateQueries({ queryKey: ['registrations', 'event', eventId] })
+      queryClient.invalidateQueries({ queryKey: ['events'] })
+      queryClient.invalidateQueries({ queryKey: ['event', eventId] })
+    }
+  })
+}
+
+/**
+ * Hook admin: remover a un usuario de un evento.
+ */
+export const useAdminRemoveUserFromEvent = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ registrationId, eventId, userId }) =>
+      adminRemoveUserFromEvent(registrationId, eventId, userId),
+    onSuccess: (_, { eventId }) => {
+      queryClient.invalidateQueries({ queryKey: ['registrations'] })
+      queryClient.invalidateQueries({ queryKey: ['registrations', 'event', eventId] })
       queryClient.invalidateQueries({ queryKey: ['events'] })
       queryClient.invalidateQueries({ queryKey: ['event', eventId] })
     }

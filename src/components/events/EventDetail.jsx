@@ -6,7 +6,8 @@ import {
   Users,
   Share2,
   CalendarPlus,
-  ArrowLeft
+  ArrowLeft,
+  Lock
 } from '../../utils/icons'
 import { useNavigate } from 'react-router-dom'
 import { Card, Badge, Button, Countdown, Avatar } from '../ui'
@@ -71,9 +72,17 @@ const EventDetail = ({
         </button>
 
         <div className="flex-1">
-          <Badge variant={event.type} className="mb-2">
-            {eventType.label}
-          </Badge>
+          <div className="flex items-center gap-2 mb-2">
+            <Badge variant={event.type}>
+              {eventType.label}
+            </Badge>
+            {event.isPrivate && (
+              <Badge variant="secondary" size="sm">
+                <Lock className="w-3 h-3" />
+                Privado
+              </Badge>
+            )}
+          </div>
           <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
             {event.title}
           </h1>
@@ -180,7 +189,7 @@ const EventDetail = ({
 
         {/* Registration action */}
         <Card>
-          {status === 'abierto' && (
+          {status === 'abierto' && !event.isPrivate && (
             <Button
               fullWidth
               size="lg"
@@ -191,19 +200,37 @@ const EventDetail = ({
             </Button>
           )}
 
+          {status === 'abierto' && event.isPrivate && (
+            <div className="space-y-2 text-center py-2">
+              <Button fullWidth size="lg" variant="secondary" disabled icon={Lock}>
+                Evento privado — sólo por invitación
+              </Button>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                El administrador gestiona las inscripciones a este evento.
+              </p>
+            </div>
+          )}
+
           {status === 'inscrito' && (
             <div className="space-y-2">
               <Button fullWidth size="lg" variant="success" disabled>
                 Ya estás inscrito
               </Button>
-              <Button
-                fullWidth
-                variant="ghost"
-                onClick={() => onCancelRegistration?.(userRegistration)}
-                loading={isCanceling}
-              >
-                Cancelar inscripción
-              </Button>
+              {userRegistration?.registeredBy !== 'admin' && (
+                <Button
+                  fullWidth
+                  variant="ghost"
+                  onClick={() => onCancelRegistration?.(userRegistration)}
+                  loading={isCanceling}
+                >
+                  Cancelar inscripción
+                </Button>
+              )}
+              {userRegistration?.registeredBy === 'admin' && (
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center">
+                  Te inscribió el administrador. Contactalo para dar de baja.
+                </p>
+              )}
             </div>
           )}
 

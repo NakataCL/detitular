@@ -149,15 +149,19 @@ const AdminUsuarios = () => {
       {/* Búsqueda */}
       <div className="mb-8">
         <Input
+          type="search"
           placeholder="Buscar por nombre o email..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           icon={Search}
+          inputMode="search"
+          autoComplete="off"
+          enterKeyHint="search"
         />
       </div>
 
       {/* Estadísticas rápidas */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-8">
         <Card className="text-center py-4">
           <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
             {users?.length || 0}
@@ -248,9 +252,77 @@ const UserCard = ({
   const hasPlan = user.plan?.active
   const isDisabled = !!user.disabled
 
+  const planStatus = hasPlan ? (
+    <div className="text-right">
+      <Badge variant="success" size="sm" dot>
+        Plan activo
+      </Badge>
+      <p className="text-xs text-zinc-400 mt-1">
+        {user.plan.sessionsUsed || 0}/{user.plan.totalSessions} sesiones
+      </p>
+    </div>
+  ) : (
+    <Badge variant="secondary" size="sm">
+      Sin plan
+    </Badge>
+  )
+
+  const actionButtons = (
+    <div className="flex items-center gap-1">
+      <button
+        onClick={onToggleRole}
+        className="p-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-400"
+        title={user.role === 'admin' ? 'Quitar admin' : 'Hacer admin'}
+        aria-label={user.role === 'admin' ? 'Quitar admin' : 'Hacer admin'}
+      >
+        <Shield className="w-4 h-4" />
+      </button>
+
+      {hasPlan ? (
+        <button
+          onClick={onDeactivatePlan}
+          className="p-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-red-500"
+          title="Desactivar plan"
+          aria-label="Desactivar plan"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      ) : (
+        <button
+          onClick={onManagePlan}
+          className="p-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-red-600"
+          title="Activar plan"
+          aria-label="Activar plan"
+        >
+          <CreditCard className="w-4 h-4" />
+        </button>
+      )}
+
+      <button
+        onClick={onToggleDisabled}
+        disabled={isSelf}
+        className="p-2.5 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg text-amber-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+        title={isSelf ? 'No puedes desactivarte a ti mismo' : (isDisabled ? 'Reactivar usuario' : 'Desactivar usuario')}
+        aria-label={isDisabled ? 'Reactivar usuario' : 'Desactivar usuario'}
+      >
+        {isDisabled ? <Check className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+      </button>
+
+      <button
+        onClick={onDelete}
+        disabled={isSelf}
+        className="p-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-red-500 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+        title={isSelf ? 'No puedes eliminarte a ti mismo' : 'Eliminar usuario'}
+        aria-label="Eliminar usuario"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
+  )
+
   return (
     <Card className={isDisabled ? 'opacity-60' : ''}>
-      <div className="flex items-center gap-4">
+      <div className="flex items-start sm:items-center gap-3 sm:gap-4">
         <Avatar
           src={user.photoURL}
           name={user.nombre || user.displayName}
@@ -277,71 +349,18 @@ const UserCard = ({
               {user.posicionPrincipal}
             </p>
           )}
+
+          {/* Mobile: acciones (arriba) + plan (abajo derecha) en stack */}
+          <div className="mt-3 space-y-2 sm:hidden">
+            <div className="flex justify-start">{actionButtons}</div>
+            <div className="flex justify-end">{planStatus}</div>
+          </div>
         </div>
 
-        {/* Estado del plan */}
-        <div className="text-right">
-          {hasPlan ? (
-            <div>
-              <Badge variant="success" size="sm" dot>
-                Plan activo
-              </Badge>
-              <p className="text-xs text-zinc-400 mt-1">
-                {user.plan.sessionsUsed || 0}/{user.plan.totalSessions} sesiones
-              </p>
-            </div>
-          ) : (
-            <Badge variant="secondary" size="sm">
-              Sin plan
-            </Badge>
-          )}
-        </div>
-
-        {/* Acciones */}
-        <div className="flex items-center gap-1">
-          <button
-            onClick={onToggleRole}
-            className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-400"
-            title={user.role === 'admin' ? 'Quitar admin' : 'Hacer admin'}
-          >
-            <Shield className="w-4 h-4" />
-          </button>
-
-          {hasPlan ? (
-            <button
-              onClick={onDeactivatePlan}
-              className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-red-500"
-              title="Desactivar plan"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          ) : (
-            <button
-              onClick={onManagePlan}
-              className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-red-600"
-              title="Activar plan"
-            >
-              <CreditCard className="w-4 h-4" />
-            </button>
-          )}
-
-          <button
-            onClick={onToggleDisabled}
-            disabled={isSelf}
-            className="p-2 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg text-amber-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-            title={isSelf ? 'No puedes desactivarte a ti mismo' : (isDisabled ? 'Reactivar usuario' : 'Desactivar usuario')}
-          >
-            {isDisabled ? <Check className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
-          </button>
-
-          <button
-            onClick={onDelete}
-            disabled={isSelf}
-            className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-red-500 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-            title={isSelf ? 'No puedes eliminarte a ti mismo' : 'Eliminar usuario'}
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+        {/* Desktop: plan + acciones a la derecha */}
+        <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
+          {planStatus}
+          {actionButtons}
         </div>
       </div>
     </Card>

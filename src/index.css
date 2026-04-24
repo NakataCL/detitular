@@ -30,6 +30,7 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
   }
 
   body {
@@ -40,6 +41,7 @@
     color: #111827;
     min-height: 100vh;
     letter-spacing: -0.011em;
+    overflow-x: hidden;
   }
 
   /* Dark mode */

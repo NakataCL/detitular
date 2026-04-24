@@ -133,6 +133,8 @@ const ProfileForm = ({ player, onSuccess = null }) => {
             onChange={handleChange}
             placeholder="Tu nombre"
             icon={User}
+            autoComplete="name"
+            autoCapitalize="words"
           />
 
           <div className="grid grid-cols-2 gap-4">
@@ -145,6 +147,8 @@ const ProfileForm = ({ player, onSuccess = null }) => {
               value={formData.edad}
               onChange={handleChange}
               placeholder="Ej: 25"
+              inputMode="numeric"
+              autoComplete="off"
             />
 
             <Input
@@ -155,6 +159,8 @@ const ProfileForm = ({ player, onSuccess = null }) => {
               onChange={handleChange}
               placeholder="+1 234 567 8900"
               icon={Phone}
+              inputMode="tel"
+              autoComplete="tel"
             />
           </div>
 
@@ -165,6 +171,8 @@ const ProfileForm = ({ player, onSuccess = null }) => {
             onChange={handleChange}
             placeholder="Tu ciudad"
             icon={MapPin}
+            autoComplete="address-level2"
+            autoCapitalize="words"
           />
         </div>
       </Card>
@@ -214,6 +222,8 @@ const ProfileForm = ({ player, onSuccess = null }) => {
               value={formData.numeroCamiseta}
               onChange={handleChange}
               placeholder="Ej: 10"
+              inputMode="numeric"
+              autoComplete="off"
             />
           </div>
         </div>

@@ -44,7 +44,8 @@ const EventoDetalle = () => {
     try {
       await cancelRegistration.mutateAsync({
         registrationId: registration.id,
-        eventId: id
+        eventId: id,
+        userId: registration.userId
       })
       toast.success('Inscripción cancelada')
     } catch (error) {

@@ -1,7 +1,7 @@
 // Formulario para crear/editar eventos (Admin)
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Calendar, MapPin, Users, FileText, Clock } from '../../utils/icons'
+import { Calendar, MapPin, Users, FileText, Clock, Lock } from '../../utils/icons'
 import { Button, Card, Modal } from '../ui'
 import Input, { Textarea, Select } from '../ui/Input'
 import { EVENT_TYPES } from '../../utils/constants'
@@ -26,7 +26,8 @@ const EventForm = ({
     time: '',
     maxSlots: 16,
     location: '',
-    description: ''
+    description: '',
+    isPrivate: false
   })
   const [errors, setErrors] = useState({})
 
@@ -44,7 +45,8 @@ const EventForm = ({
         time: format(date, 'HH:mm'),
         maxSlots: initialData.maxSlots || 16,
         location: initialData.location || '',
-        description: initialData.description || ''
+        description: initialData.description || '',
+        isPrivate: initialData.isPrivate === true
       })
     } else {
       // Resetear formulario
@@ -55,7 +57,8 @@ const EventForm = ({
         time: '',
         maxSlots: 16,
         location: '',
-        description: ''
+        description: '',
+        isPrivate: false
       })
     }
     setErrors({})
@@ -108,7 +111,8 @@ const EventForm = ({
       date: dateTime,
       maxSlots: parseInt(formData.maxSlots),
       location: formData.location.trim(),
-      description: formData.description.trim()
+      description: formData.description.trim(),
+      isPrivate: !!formData.isPrivate
     }
 
     onSubmit(eventData)
@@ -140,6 +144,8 @@ const EventForm = ({
           placeholder="Ej: Partido amistoso vs. Club Deportivo"
           error={errors.title}
           icon={FileText}
+          autoCapitalize="sentences"
+          autoComplete="off"
         />
 
         <Select
@@ -183,6 +189,8 @@ const EventForm = ({
             onChange={handleChange}
             error={errors.maxSlots}
             icon={Users}
+            inputMode="numeric"
+            autoComplete="off"
           />
 
           <Input
@@ -192,8 +200,31 @@ const EventForm = ({
             onChange={handleChange}
             placeholder="Ej: Cancha principal"
             icon={MapPin}
+            autoComplete="off"
+            autoCapitalize="words"
           />
         </div>
+
+        <label className="flex items-start gap-3 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 cursor-pointer transition-colors">
+          <input
+            type="checkbox"
+            name="isPrivate"
+            checked={!!formData.isPrivate}
+            onChange={(e) => setFormData(prev => ({ ...prev, isPrivate: e.target.checked }))}
+            className="mt-1 w-4 h-4 accent-red-600 cursor-pointer"
+          />
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <Lock className="w-3.5 h-3.5 text-zinc-500" />
+              <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                Evento privado
+              </span>
+            </div>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+              Sólo los usuarios invitados por el administrador podrán verlo e inscribirse.
+            </p>
+          </div>
+        </label>
 
         <Textarea
           label="Descripción"
@@ -202,6 +233,8 @@ const EventForm = ({
           onChange={handleChange}
           placeholder="Describe los detalles del evento..."
           rows={4}
+          autoCapitalize="sentences"
+          autoComplete="off"
         />
       </form>
     </Modal>

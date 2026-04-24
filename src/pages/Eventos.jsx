@@ -69,10 +69,14 @@ const Eventos = () => {
         <div className="flex items-center gap-2">
           <div className="flex-1">
             <Input
+              type="search"
               placeholder="Buscar eventos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               icon={Search}
+              inputMode="search"
+              autoComplete="off"
+              enterKeyHint="search"
             />
           </div>
 
