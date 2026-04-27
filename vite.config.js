@@ -1,11 +1,22 @@
 import { defineConfig } from 'vite'
+import { execSync } from 'node:child_process'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+const gitSha = (() => {
+  try { return execSync('git rev-parse --short HEAD').toString().trim() }
+  catch { return 'dev' }
+})()
+const buildTime = new Date().toISOString()
+
 // https://vite.dev/config/
 export default defineConfig({
   base: '/detitular/',
+  define: {
+    __APP_VERSION__: JSON.stringify(gitSha),
+    __BUILD_TIME__: JSON.stringify(buildTime),
+  },
   server: {
     port: 5174,
   },
@@ -77,8 +88,37 @@ export default defineConfig({
         ]
       },
       workbox: {
+        clientsClaim: true,
+        skipWaiting: true,
+        cleanupOutdatedCaches: true,
+        navigateFallback: '/detitular/index.html',
+        navigateFallbackDenylist: [/^\/detitular\/__/],
         // Estrategias de cache
         runtimeCaching: [
+          {
+            // Shell HTML: NetworkFirst para tomar versiones nuevas en cuanto haya red
+            urlPattern: ({ request, url }) =>
+              request.mode === 'navigate' ||
+              url.pathname.endsWith('.html') ||
+              url.pathname === '/detitular/' ||
+              url.pathname === '/detitular',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'html-shell',
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 5, maxAgeSeconds: 60 * 60 * 24 }
+            }
+          },
+          {
+            // version.json: NetworkFirst con TTL muy corto, fuente de verdad para detección
+            urlPattern: /\/detitular\/version\.json$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'version-check',
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 1, maxAgeSeconds: 60 }
+            }
+          },
           {
             // Cache para imágenes
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
@@ -129,8 +169,8 @@ export default defineConfig({
             }
           }
         ],
-        // Precache de archivos estáticos
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}']
+        // Precache de archivos estáticos (sin html: el shell va por NetworkFirst)
+        globPatterns: ['**/*.{js,css,ico,png,svg,woff,woff2}']
       },
       devOptions: {
         enabled: true
