@@ -137,7 +137,7 @@ const ProfileForm = ({ player, onSuccess = null }) => {
             autoCapitalize="words"
           />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Edad"
               name="edad"
@@ -183,7 +183,7 @@ const ProfileForm = ({ player, onSuccess = null }) => {
           Datos Futbolísticos
         </h3>
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               label="Posición principal"
               name="posicionPrincipal"
@@ -203,7 +203,7 @@ const ProfileForm = ({ player, onSuccess = null }) => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               label="Pie hábil"
               name="pieHabil"

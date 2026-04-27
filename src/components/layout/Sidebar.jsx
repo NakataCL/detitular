@@ -42,10 +42,11 @@ const Sidebar = () => {
 
   return (
     <aside
-      className={`hidden md:flex flex-col h-screen bg-white dark:bg-zinc-900 border-r border-zinc-200/80 dark:border-zinc-800 transition-all duration-300 sticky top-0 ${
+      className={`hidden md:flex flex-col bg-white dark:bg-zinc-900 border-r border-zinc-200/80 dark:border-zinc-800 transition-all duration-300 ${
         collapsed ? 'w-[72px]' : 'w-60'
       }`}
     >
+      <div className="sticky top-0 h-screen flex flex-col">
       {/* Header */}
       <div className={`flex flex-col items-center px-4 ${collapsed ? 'py-4' : 'pt-6 pb-4'}`}>
         {collapsed ? (
@@ -163,6 +164,7 @@ const Sidebar = () => {
           </div>
         </div>
       )}
+      </div>
     </aside>
   )
 }

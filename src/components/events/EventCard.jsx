@@ -42,14 +42,14 @@ const EventCard = ({
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-50 truncate">
+            <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-50 break-words mb-2">
               {event.title}
             </h4>
-            <div className="flex items-center gap-1.5 text-xs text-zinc-400 mt-0.5">
+            <div className="flex items-center gap-1.5 text-xs text-zinc-400">
               <Clock className="w-3 h-3" />
               <span>{formatShortDate(event.date)}</span>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-zinc-400 mt-0.5">
+            <div className="flex items-center gap-1.5 text-xs text-zinc-400 mt-1">
               <Users className="w-3 h-3" />
               <span>
                 {formatSlots(event)} cupos
@@ -62,16 +62,16 @@ const EventCard = ({
           </div>
 
           {/* Status badges */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-col items-end gap-1 flex-shrink-0">
+            <Badge variant={status} size="sm">
+              {statusConfig.label}
+            </Badge>
             {event.isPrivate && (
               <Badge variant="secondary" size="sm">
                 <Lock className="w-3 h-3" />
                 Privado
               </Badge>
             )}
-            <Badge variant={status} size="sm">
-              {statusConfig.label}
-            </Badge>
           </div>
         </div>
       </Card>

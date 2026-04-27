@@ -156,7 +156,7 @@ const EventForm = ({
           options={eventTypeOptions}
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Fecha"
             name="date"
@@ -178,7 +178,7 @@ const EventForm = ({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Cupos máximos"
             name="maxSlots"

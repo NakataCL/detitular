@@ -13,7 +13,7 @@ const Layout = ({ showHeader = true, headerProps = {} }) => {
       <div className="flex">
         <Sidebar />
 
-        <main className="flex-1 min-h-screen">
+        <main className="flex-1 min-w-0 min-h-screen">
           {showHeader && <Header {...headerProps} />}
 
           <div className="pb-nav md:pb-0">

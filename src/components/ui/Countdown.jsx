@@ -28,7 +28,7 @@ const Countdown = ({ targetDate, onComplete = null, className = '' }) => {
   }
 
   return (
-    <div className={`flex items-center justify-center gap-2.5 ${className}`}>
+    <div className={`flex items-center justify-center gap-1.5 sm:gap-2.5 ${className}`}>
       {timeLeft.days > 0 && (
         <TimeUnit value={timeLeft.days} label="días" />
       )}
@@ -43,7 +43,7 @@ const Countdown = ({ targetDate, onComplete = null, className = '' }) => {
 
 const TimeUnit = ({ value, label }) => (
   <div className="flex flex-col items-center">
-    <div className="bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 rounded-xl px-3 py-2 min-w-[3rem] text-center">
+    <div className="bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 rounded-xl px-2 sm:px-3 py-2 min-w-[2.5rem] sm:min-w-[3rem] text-center">
       <span className="text-lg font-bold tabular-nums">
         {String(value).padStart(2, '0')}
       </span>

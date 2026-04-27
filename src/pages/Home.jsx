@@ -26,7 +26,7 @@ const Home = () => {
   }
 
   return (
-    <div className="px-6 md:px-12 pt-10 pb-12 md:pt-14 md:pb-20 max-w-5xl mx-auto space-y-16">
+    <div className="px-4 sm:px-6 md:px-12 pt-8 sm:pt-10 pb-12 md:pt-14 md:pb-20 max-w-5xl mx-auto space-y-16">
       {/* Hero */}
       <motion.section
         initial={{ opacity: 0, y: 16 }}
@@ -69,7 +69,7 @@ const Home = () => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6"
+          className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6"
         >
           <StatCard label="Jugadores" value={loadingStats ? '...' : stats?.totalPlayers || 0} icon={Users} />
           <StatCard label="Eventos/mes" value={loadingStats ? '...' : stats?.eventsThisMonth || 0} icon={Calendar} />
@@ -79,12 +79,13 @@ const Home = () => {
       )}
 
       {/* Next Event + Events in 2 cols on desktop */}
-      <div className="grid md:grid-cols-2 gap-8 md:gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
         {/* Next Event */}
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
+          className="min-w-0"
         >
           <Card padding="lg">
             <div className="flex items-center justify-between mb-6">
@@ -146,6 +147,7 @@ const Home = () => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
+          className="min-w-0"
         >
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">

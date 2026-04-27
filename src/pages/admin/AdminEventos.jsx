@@ -102,7 +102,7 @@ const AdminEventos = () => {
   }
 
   return (
-    <div className="px-6 md:px-12 pt-10 pb-12 md:pt-14 md:pb-20 max-w-6xl mx-auto">
+    <div className="px-4 sm:px-6 md:px-12 pt-8 sm:pt-10 pb-12 md:pt-14 md:pb-20 max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
