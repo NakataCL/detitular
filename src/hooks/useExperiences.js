@@ -6,7 +6,7 @@ import {
   createExperience,
   deleteExperience
 } from '../firebase/firestore'
-import { uploadExperienceImage, deleteFile } from '../firebase/storage'
+import { uploadExperienceImage, deleteFile } from '../services/cloudinary'
 import { useAuth } from '../context/AuthContext'
 
 /**

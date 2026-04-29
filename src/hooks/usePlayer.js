@@ -8,7 +8,7 @@ import {
   getPlayerStats,
   deleteUser
 } from '../firebase/firestore'
-import { uploadProfileImage } from '../firebase/storage'
+import { uploadProfileImage } from '../services/cloudinary'
 import { useAuth } from '../context/AuthContext'
 
 /**

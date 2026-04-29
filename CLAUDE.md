@@ -12,21 +12,22 @@ Football academy management PWA (Spanish-language UI). Handles events, player re
 - `npm run build` — Production build to `dist/`
 - `npm run lint` — ESLint check
 - `npm run preview` — Preview production build
-- `firebase deploy --only firestore:rules,storage` — Deploy security rules
+- `firebase deploy --only firestore:rules` — Deploy Firestore security rules
 - `firebase deploy --only hosting` — Deploy to Firebase Hosting
 
 No test framework is configured.
 
 ## Architecture
 
-**Stack:** React 19 + Vite 7 + Tailwind CSS 4 + Firebase (Auth, Firestore, Storage) + TanStack Query
+**Stack:** React 19 + Vite 7 + Tailwind CSS 4 + Firebase (Auth, Firestore) + Cloudinary (image uploads) + TanStack Query
 
 **Provider hierarchy** (in `App.jsx`):
 `QueryClientProvider` → `AuthProvider` → `BrowserRouter` → `Routes`
 
 **Key layers:**
 
-- **`src/firebase/`** — Service layer wrapping Firebase SDK. Separated into `config.js`, `auth.js`, `firestore.js`, `storage.js`. All Firestore CRUD lives in `firestore.js`.
+- **`src/firebase/`** — Service layer wrapping Firebase SDK. Separated into `config.js`, `auth.js`, `firestore.js`. All Firestore CRUD lives in `firestore.js`.
+- **`src/services/cloudinary.js`** — Image upload service (replaces Firebase Storage). Exposes `uploadProfileImage`, `uploadExperienceImage`, `deleteFile` (no-op on client; orphans cleaned via Cloudinary dashboard). Uses unsigned upload preset.
 - **`src/context/AuthContext.jsx`** — Provides `useAuth()` hook with `user`, `userData`, `isAdmin`, `isPlayer`, `isAuthenticated`, `login`, `logout`, `refreshUserData`. Google OAuth with redirect handling for mobile.
 - **`src/hooks/`** — Custom hooks wrapping TanStack Query for data fetching (`useEvents`, `usePlayer`, `useRegistrations`, `useExperiences`, `useStats`, `usePWA`).
 - **`src/components/layout/ProtectedRoute`** — Route guard supporting `requireAuth` and `requireAdmin` props.
@@ -54,4 +55,4 @@ No test framework is configured.
 
 ## Environment
 
-Requires a `.env` file based on `.env.example` with Firebase credentials and `VITE_ADMIN_EMAIL`. All env vars are prefixed with `VITE_`.
+Requires a `.env` file based on `.env.example` with Firebase credentials, Cloudinary (`VITE_CLOUDINARY_CLOUD_NAME` + `VITE_CLOUDINARY_UPLOAD_PRESET`), and `VITE_ADMIN_EMAIL`. All env vars are prefixed with `VITE_`.
