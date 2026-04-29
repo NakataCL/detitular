@@ -22,7 +22,7 @@ import {
   useDeleteUser
 } from '../../hooks/usePlayer'
 import { useAuth } from '../../context/AuthContext'
-import { PLANS } from '../../utils/constants'
+import { PLANS, POSITIONS } from '../../utils/constants'
 import { formatDate } from '../../utils/helpers'
 import toast from 'react-hot-toast'
 
@@ -344,11 +344,19 @@ const UserCard = ({
             )}
           </div>
           <p className="text-sm text-zinc-400 truncate">{user.email}</p>
-          {user.posicionPrincipal && (
-            <p className="text-xs text-primary-600 mt-1">
-              {user.posicionPrincipal}
-            </p>
-          )}
+          {(() => {
+            const principal = POSITIONS.find(p => p.value === user.posicionPrincipal)?.label
+            const secundaria = POSITIONS.find(p => p.value === user.posicionSecundaria)?.label
+            if (!principal && !secundaria) return null
+            return (
+              <p className="text-xs text-primary-600 mt-1">
+                {principal || '—'}
+                {secundaria && (
+                  <span className="text-zinc-400"> · {secundaria}</span>
+                )}
+              </p>
+            )
+          })()}
 
           {/* Mobile: acciones (arriba) + plan (abajo derecha) en stack */}
           <div className="mt-3 space-y-2 sm:hidden">

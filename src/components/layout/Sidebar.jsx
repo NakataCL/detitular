@@ -6,6 +6,7 @@ import {
   Calendar,
   Film,
   User,
+  Users,
   Shield,
   ChevronLeft,
   LogOut
@@ -117,17 +118,32 @@ const Sidebar = () => {
             </NavLink>
 
             {isAdmin && (
-              <NavLink
-                to="/admin"
-                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition-colors ${
-                  location.pathname.startsWith('/admin')
-                    ? 'bg-zinc-100 text-zinc-900 font-semibold dark:bg-zinc-800 dark:text-zinc-50'
-                    : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-900'
-                }`}
-              >
-                <Shield className="w-[18px] h-[18px] flex-shrink-0" />
-                {!collapsed && <span>Admin</span>}
-              </NavLink>
+              <>
+                <NavLink
+                  to="/admin"
+                  end
+                  className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition-colors ${
+                    location.pathname === '/admin'
+                      ? 'bg-zinc-100 text-zinc-900 font-semibold dark:bg-zinc-800 dark:text-zinc-50'
+                      : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-900'
+                  }`}
+                >
+                  <Shield className="w-[18px] h-[18px] flex-shrink-0" />
+                  {!collapsed && <span>Admin</span>}
+                </NavLink>
+
+                <NavLink
+                  to="/admin/usuarios"
+                  className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition-colors ${
+                    location.pathname.startsWith('/admin/usuarios')
+                      ? 'bg-zinc-100 text-zinc-900 font-semibold dark:bg-zinc-800 dark:text-zinc-50'
+                      : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-900'
+                  }`}
+                >
+                  <Users className="w-[18px] h-[18px] flex-shrink-0" />
+                  {!collapsed && <span>Usuarios</span>}
+                </NavLink>
+              </>
             )}
           </>
         )}
