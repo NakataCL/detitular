@@ -1,8 +1,6 @@
 // Servicios de autenticación
 import {
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   onAuthStateChanged
@@ -19,42 +17,16 @@ googleProvider.setCustomParameters({
 // Email del admin configurado en .env
 const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@academia.com'
 
-/**
- * Inicia sesión con Google
- * En móvil usa redirect, en desktop usa popup
- */
+// iOS Safari ITP bloquea getRedirectResult porque el iframe de firebaseapp.com
+// es cross-origin a nakatacl.github.io. Popup usa postMessage con el opener
+// (mismo contexto) y no cae bajo ITP.
 export const signInWithGoogle = async () => {
   try {
-    // Detectar si es móvil para usar redirect en lugar de popup
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-
-    if (isMobile) {
-      await signInWithRedirect(auth, googleProvider)
-      return null // El resultado se obtiene después del redirect
-    } else {
-      const result = await signInWithPopup(auth, googleProvider)
-      await handleUserAfterAuth(result.user)
-      return result.user
-    }
+    const result = await signInWithPopup(auth, googleProvider)
+    await handleUserAfterAuth(result.user)
+    return result.user
   } catch (error) {
     console.error('Error al iniciar sesión con Google:', error)
-    throw error
-  }
-}
-
-/**
- * Maneja el resultado del redirect de Google (para móvil)
- */
-export const handleGoogleRedirect = async () => {
-  try {
-    const result = await getRedirectResult(auth)
-    if (result?.user) {
-      await handleUserAfterAuth(result.user)
-      return result.user
-    }
-    return null
-  } catch (error) {
-    console.error('Error al manejar redirect de Google:', error)
     throw error
   }
 }

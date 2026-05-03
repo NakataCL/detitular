@@ -2,7 +2,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import {
   signInWithGoogle,
-  handleGoogleRedirect,
   signOut,
   onAuthChange,
   getCurrentUserData
@@ -46,11 +45,6 @@ export const AuthProvider = ({ children }) => {
       } finally {
         setLoading(false)
       }
-    })
-
-    // Manejar resultado de redirect (para login en móvil)
-    handleGoogleRedirect().catch((err) => {
-      console.error('Error en redirect:', err)
     })
 
     return () => unsubscribe()
