@@ -102,7 +102,7 @@ const Perfil = () => {
       {/* Actions */}
       <div className="space-y-2">
         {isAdmin && (
-          <Card hover onClick={() => navigate('/admin')} className="cursor-pointer">
+          <Card hover onClick={() => navigate('/admin')} aria-label="Ir al panel de administración" className="cursor-pointer">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-violet-50 dark:bg-violet-950/50 rounded-xl">

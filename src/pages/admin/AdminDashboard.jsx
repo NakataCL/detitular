@@ -96,7 +96,7 @@ const AdminDashboard = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card hover onClick={action.action} className="cursor-pointer">
+              <Card hover onClick={action.action} aria-label={action.title} className="cursor-pointer">
                 <div className="flex items-start gap-4">
                   <div className={`p-3 rounded-xl ${action.color} text-white`}>
                     <action.icon className="w-6 h-6" />
@@ -170,7 +170,7 @@ const AdminDashboard = () => {
 
       {/* Secciones de administración */}
       <div className="grid md:grid-cols-2 gap-4">
-        <Card hover onClick={() => navigate('/admin/eventos')} className="cursor-pointer">
+        <Card hover onClick={() => navigate('/admin/eventos')} aria-label="Ir a Gestión de Eventos" className="cursor-pointer">
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-900/30">
               <Calendar className="w-6 h-6 text-blue-600" />
@@ -187,7 +187,7 @@ const AdminDashboard = () => {
           </div>
         </Card>
 
-        <Card hover onClick={() => navigate('/admin/usuarios')} className="cursor-pointer">
+        <Card hover onClick={() => navigate('/admin/usuarios')} aria-label="Ir a Gestión de Usuarios" className="cursor-pointer">
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl bg-red-100 dark:bg-red-900/30">
               <Users className="w-6 h-6 text-red-600" />

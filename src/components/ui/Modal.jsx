@@ -51,6 +51,49 @@ const Modal = ({
     }
   }, [isOpen])
 
+  // Focus trap: enfoca el modal al abrir y mantiene el Tab dentro
+  useEffect(() => {
+    if (!isOpen) return
+    const node = modalRef.current
+    if (!node) return
+
+    const previouslyFocused = document.activeElement
+    // Foco inicial: primer elemento interactivo o el contenedor
+    const focusables = node.querySelectorAll(
+      'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )
+    const first = focusables[0] || node
+    first.focus({ preventScroll: true })
+
+    const handleKey = (e) => {
+      if (e.key !== 'Tab') return
+      const items = node.querySelectorAll(
+        'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+      if (items.length === 0) {
+        e.preventDefault()
+        return
+      }
+      const firstEl = items[0]
+      const lastEl = items[items.length - 1]
+      if (e.shiftKey && document.activeElement === firstEl) {
+        e.preventDefault()
+        lastEl.focus()
+      } else if (!e.shiftKey && document.activeElement === lastEl) {
+        e.preventDefault()
+        firstEl.focus()
+      }
+    }
+
+    node.addEventListener('keydown', handleKey)
+    return () => {
+      node.removeEventListener('keydown', handleKey)
+      if (previouslyFocused && previouslyFocused.focus) {
+        previouslyFocused.focus({ preventScroll: true })
+      }
+    }
+  }, [isOpen])
+
   const handleOverlayClick = (e) => {
     if (closeOnOverlay && e.target === e.currentTarget) {
       onClose()
@@ -107,7 +150,11 @@ const Modal = ({
             ref={modalRef}
             {...sheetMotion}
             transition={{ duration: 0.18 }}
-            className={sheetShape}
+            role="dialog"
+            aria-modal="true"
+            aria-label={typeof title === 'string' ? title : undefined}
+            tabIndex={-1}
+            className={`${sheetShape} focus:outline-none`}
           >
             {/* Header */}
             {(title || showClose) && (
@@ -120,9 +167,10 @@ const Modal = ({
                 {showClose && (
                   <button
                     onClick={onClose}
-                    className="p-1 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors"
+                    aria-label="Cerrar"
+                    className="p-1 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/40"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-4 h-4" aria-hidden="true" />
                   </button>
                 )}
               </div>
