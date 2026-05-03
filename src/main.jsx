@@ -13,6 +13,9 @@ console.info(`[detitular] v${__APP_VERSION__} (${__BUILD_TIME__})`)
 const UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000
 const FOREGROUND_GRACE_MS = 60 * 1000
 
+// Si ya había un SW controlando al cargar, un futuro controllerchange = nueva versión.
+// Si no había, el primer claim es la instalación inicial: la página ya muestra el código actual.
+const hadController = !!navigator.serviceWorker?.controller
 let swRegistration = null
 let lastUpdateCheck = Date.now()
 let reloading = false
@@ -28,6 +31,7 @@ registerSW({
           lastUpdateCheck = Date.now()
         }
       }, UPDATE_CHECK_INTERVAL_MS)
+      if (navigator.onLine) checkVersionJson()
     }
   },
   onNeedRefresh() {
@@ -44,6 +48,7 @@ registerSW({
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (reloading) return
+    if (!hadController) return
     reloading = true
     notifyAndReload()
   })
@@ -103,20 +108,14 @@ async function checkVersionJson() {
     const { version } = await res.json()
     if (version && version !== __APP_VERSION__) {
       console.info('[detitular] nueva versión detectada:', version)
+      // Solo nudge al SW: cuando termine de instalar y activar el nuevo,
+      // el listener de controllerchange se encarga del reload.
       swRegistration?.update().catch(() => {})
-      setTimeout(() => {
-        if (!reloading) {
-          reloading = true
-          notifyAndReload()
-        }
-      }, 5000)
     }
   } catch {
     // offline u otro fallo: ignorar
   }
 }
-
-if (navigator.onLine) checkVersionJson()
 
 // Renderizar aplicación
 createRoot(document.getElementById('root')).render(
