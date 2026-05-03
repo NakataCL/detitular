@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom'
 import BottomNav from './BottomNav'
 import Sidebar from './Sidebar'
 import Header from './Header'
+import Topbar from './Topbar'
 import { OfflineIndicator, InstallPrompt } from '../ui'
 
 const Layout = ({ showHeader = true, headerProps = {} }) => {
@@ -14,7 +15,9 @@ const Layout = ({ showHeader = true, headerProps = {} }) => {
         <Sidebar />
 
         <main className="flex-1 min-w-0 min-h-screen">
+          {/* Header sólo móvil; Topbar sólo escritorio */}
           {showHeader && <Header {...headerProps} />}
+          <Topbar />
 
           <div className="pb-nav md:pb-0">
             <Outlet />

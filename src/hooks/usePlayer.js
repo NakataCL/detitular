@@ -40,11 +40,12 @@ export const useUserById = (userId) => {
 /**
  * Hook para obtener todos los usuarios (admin)
  */
-export const useAllUsers = () => {
+export const useAllUsers = (options = {}) => {
   return useQuery({
     queryKey: ['users', 'all'],
     queryFn: getAllUsers,
-    staleTime: 1000 * 60 * 5
+    staleTime: 1000 * 60 * 5,
+    ...options
   })
 }
 
