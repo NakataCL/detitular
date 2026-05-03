@@ -1,10 +1,9 @@
 // Página de Perfil del jugador
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { LogOut, ChevronRight, Shield, Edit2 } from '../utils/icons'
-import { Card, Button, Avatar, Badge, Spinner, Modal } from '../components/ui'
-import { ProfileForm, PlayerStats, PlanCard } from '../components/profile'
+import { Card, Button, Spinner, Modal } from '../components/ui'
+import { ProfileForm, PlanCard, PlayerCard } from '../components/profile'
 import { useAuth } from '../context/AuthContext'
 import { usePlayer } from '../hooks/usePlayer'
 import { POSITIONS, FOOT_OPTIONS } from '../utils/constants'
@@ -12,7 +11,7 @@ import toast from 'react-hot-toast'
 
 const Perfil = () => {
   const navigate = useNavigate()
-  const { user, userData, logout, isAdmin } = useAuth()
+  const { user, logout, isAdmin } = useAuth()
   const { data: player, isLoading } = usePlayer()
   const [showEditModal, setShowEditModal] = useState(false)
 
@@ -30,52 +29,23 @@ const Perfil = () => {
     return <Spinner fullScreen />
   }
 
-  const displayName = player?.nombre || player?.displayName || user?.displayName || 'Jugador'
-  const positionLabel = POSITIONS.find(p => p.value === player?.posicionPrincipal)?.label
-
   return (
-    <div className="px-4 sm:px-6 md:px-12 pt-8 sm:pt-10 pb-12 md:pt-14 md:pb-20 max-w-3xl mx-auto space-y-12">
-      {/* Profile header */}
-      <Card>
-        <div className="flex items-center gap-4">
-          <Avatar
-            src={player?.photoURL || user?.photoURL}
-            name={displayName}
-            size="xl"
-          />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 truncate">
-                {displayName}
-              </h1>
-              {isAdmin && (
-                <Badge variant="admin" size="sm">
-                  <Shield className="w-3 h-3 mr-1" />
-                  Admin
-                </Badge>
-              )}
-            </div>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate">{user?.email}</p>
-            {positionLabel && (
-              <p className="text-sm text-primary-600 dark:text-primary-400 mt-0.5">{positionLabel}</p>
-            )}
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowEditModal(true)}
-          >
-            <Edit2 className="w-4 h-4" />
-          </Button>
-        </div>
-      </Card>
-
-      {/* Stats */}
-      <div>
-        <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-4">
-          Mis Estadísticas
-        </h2>
-        <PlayerStats />
+    <div className="px-4 sm:px-6 md:px-12 pt-8 sm:pt-10 pb-12 md:pt-14 md:pb-20 max-w-3xl mx-auto space-y-10">
+      {/* Carnet de jugador */}
+      <div className="relative">
+        <PlayerCard player={player} user={user} />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowEditModal(true)}
+          aria-label="Editar perfil"
+          className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white"
+        >
+          <Edit2 className="w-4 h-4" />
+        </Button>
+        <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400 text-center">
+          {user?.email}
+        </p>
       </div>
 
       {/* Plan */}
