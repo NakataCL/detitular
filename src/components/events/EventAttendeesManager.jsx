@@ -1,7 +1,7 @@
 // Modal admin para gestionar inscritos de un evento (ver, añadir, remover, marcar asistencia)
 import { useMemo, useState } from 'react'
 import { Search, Trash2, Check, Plus, Lock } from '../../utils/icons'
-import { Modal, Button, Avatar, EmptyState, Skeleton, Badge } from '../ui'
+import { Modal, Button, Avatar, EmptyState, Skeleton, Badge, ConfirmModal } from '../ui'
 import Input from '../ui/Input'
 import {
   useEventRegistrations,
@@ -16,6 +16,7 @@ import toast from 'react-hot-toast'
 const EventAttendeesManager = ({ eventId, onClose }) => {
   const [tab, setTab] = useState('inscritos')
   const [searchTerm, setSearchTerm] = useState('')
+  const [pendingRemove, setPendingRemove] = useState(null)
 
   const { data: event } = useEvent(eventId)
   const { data: registrations, isLoading: loadingRegs } = useEventRegistrations(eventId)
@@ -77,17 +78,23 @@ const EventAttendeesManager = ({ eventId, onClose }) => {
     }
   }
 
-  const handleRemoveUser = async (registration) => {
-    if (!window.confirm(`¿Quitar a ${registration.userName} de este evento?`)) return
+  const handleRemoveUser = (registration) => {
+    setPendingRemove(registration)
+  }
+
+  const performRemove = async () => {
+    if (!pendingRemove) return
     try {
       await removeUser.mutateAsync({
-        registrationId: registration.id,
+        registrationId: pendingRemove.id,
         eventId,
-        userId: registration.userId
+        userId: pendingRemove.userId
       })
       toast.success('Inscripción removida')
     } catch {
       toast.error('Error al remover usuario')
+    } finally {
+      setPendingRemove(null)
     }
   }
 
@@ -256,6 +263,20 @@ const EventAttendeesManager = ({ eventId, onClose }) => {
           )}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!pendingRemove}
+        onClose={() => setPendingRemove(null)}
+        onConfirm={performRemove}
+        title="Quitar inscripción"
+        description={
+          pendingRemove
+            ? `${pendingRemove.userName || pendingRemove.userEmail} será removido del evento.`
+            : ''
+        }
+        confirmLabel="Quitar"
+        loading={removeUser.isPending}
+      />
     </Modal>
   )
 }

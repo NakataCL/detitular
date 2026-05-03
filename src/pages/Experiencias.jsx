@@ -2,7 +2,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus } from '../utils/icons'
-import { Button, Skeleton, EmptyState } from '../components/ui'
+import { Button, Skeleton, EmptyState, ConfirmModal } from '../components/ui'
 import { ExperienceCard, ExperienceForm, Lightbox } from '../components/experiences'
 import { useInfiniteExperiences, useCreateExperience, useDeleteExperience } from '../hooks/useExperiences'
 import { useAuth } from '../context/AuthContext'
@@ -16,6 +16,7 @@ const Experiencias = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [confirmingDelete, setConfirmingDelete] = useState(null)
 
   const {
     data,
@@ -52,14 +53,19 @@ const Experiencias = () => {
     }
   }
 
-  const handleDeleteExperience = async (experience) => {
-    if (!window.confirm('¿Estás seguro de eliminar este contenido?')) return
+  const handleDeleteExperience = (experience) => {
+    setConfirmingDelete(experience)
+  }
 
+  const performDelete = async () => {
+    if (!confirmingDelete) return
     try {
-      await deleteExperience.mutateAsync(experience)
+      await deleteExperience.mutateAsync(confirmingDelete)
       toast.success('Contenido eliminado')
-    } catch (error) {
+    } catch {
       toast.error('Error al eliminar')
+    } finally {
+      setConfirmingDelete(null)
     }
   }
 
@@ -188,6 +194,37 @@ const Experiencias = () => {
         currentIndex={lightboxIndex}
         onIndexChange={setLightboxIndex}
       />
+
+      <ConfirmModal
+        isOpen={!!confirmingDelete}
+        onClose={() => setConfirmingDelete(null)}
+        onConfirm={performDelete}
+        title="Eliminar contenido"
+        confirmLabel="Eliminar"
+        loading={deleteExperience.isPending}
+      >
+        {confirmingDelete && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              {confirmingDelete.mediaType === 'image' && confirmingDelete.mediaUrl ? (
+                <img
+                  src={confirmingDelete.mediaUrl}
+                  alt={confirmingDelete.title}
+                  className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex-shrink-0" />
+              )}
+              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                {confirmingDelete.title}
+              </p>
+            </div>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              Esto eliminará la {confirmingDelete.mediaType === 'video' ? 'pieza' : 'foto'} definitivamente.
+            </p>
+          </div>
+        )}
+      </ConfirmModal>
     </div>
   )
 }

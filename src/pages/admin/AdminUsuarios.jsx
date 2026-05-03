@@ -12,7 +12,7 @@ import {
   Trash2,
   AlertTriangle
 } from '../../utils/icons'
-import { Card, Button, Badge, Avatar, EmptyState, Skeleton, Modal } from '../../components/ui'
+import { Card, Button, Badge, Avatar, EmptyState, Skeleton, Modal, ConfirmModal } from '../../components/ui'
 import Input, { Select } from '../../components/ui/Input'
 import {
   useAllUsers,
@@ -31,6 +31,9 @@ const AdminUsuarios = () => {
   const [selectedUser, setSelectedUser] = useState(null)
   const [showPlanModal, setShowPlanModal] = useState(false)
   const [userToDelete, setUserToDelete] = useState(null)
+  const [pendingRoleChange, setPendingRoleChange] = useState(null)
+  const [pendingPlanDeactivate, setPendingPlanDeactivate] = useState(null)
+  const [pendingDisableToggle, setPendingDisableToggle] = useState(null)
 
   const { user: currentUser } = useAuth()
   const { data: users, isLoading } = useAllUsers()
@@ -49,16 +52,21 @@ const AdminUsuarios = () => {
     )
   }) || []
 
-  const handleToggleRole = async (user) => {
+  const handleToggleRole = (user) => {
     const newRole = user.role === 'admin' ? 'jugador' : 'admin'
+    setPendingRoleChange({ user, newRole })
+  }
 
-    if (!window.confirm(`¿Cambiar rol de ${user.nombre || user.displayName} a ${newRole}?`)) return
-
+  const performRoleChange = async () => {
+    if (!pendingRoleChange) return
+    const { user, newRole } = pendingRoleChange
     try {
       await updateRole.mutateAsync({ userId: user.id, role: newRole })
       toast.success(`Rol actualizado a ${newRole}`)
-    } catch (error) {
+    } catch {
       toast.error('Error al actualizar rol')
+    } finally {
+      setPendingRoleChange(null)
     }
   }
 
@@ -93,34 +101,41 @@ const AdminUsuarios = () => {
     }
   }
 
-  const handleDeactivatePlan = async (user) => {
-    if (!window.confirm('¿Desactivar el plan de este usuario?')) return
+  const handleDeactivatePlan = (user) => {
+    setPendingPlanDeactivate(user)
+  }
 
+  const performPlanDeactivate = async () => {
+    if (!pendingPlanDeactivate) return
+    const user = pendingPlanDeactivate
     try {
       await updatePlan.mutateAsync({
         userId: user.id,
-        planData: {
-          ...user.plan,
-          active: false
-        }
+        planData: { ...user.plan, active: false }
       })
       toast.success('Plan desactivado')
-    } catch (error) {
+    } catch {
       toast.error('Error al desactivar plan')
+    } finally {
+      setPendingPlanDeactivate(null)
     }
   }
 
-  const handleToggleDisabled = async (user) => {
-    const nextDisabled = !user.disabled
+  const handleToggleDisabled = (user) => {
+    setPendingDisableToggle({ user, nextDisabled: !user.disabled })
+  }
+
+  const performToggleDisabled = async () => {
+    if (!pendingDisableToggle) return
+    const { user, nextDisabled } = pendingDisableToggle
     const action = nextDisabled ? 'desactivar' : 'reactivar'
-
-    if (!window.confirm(`¿${action.charAt(0).toUpperCase() + action.slice(1)} a ${user.nombre || user.displayName}?`)) return
-
     try {
       await toggleDisabled.mutateAsync({ userId: user.id, disabled: nextDisabled })
       toast.success(nextDisabled ? 'Usuario desactivado' : 'Usuario reactivado')
-    } catch (error) {
+    } catch {
       toast.error(`Error al ${action} usuario`)
+    } finally {
+      setPendingDisableToggle(null)
     }
   }
 
@@ -234,6 +249,46 @@ const AdminUsuarios = () => {
         onClose={() => setUserToDelete(null)}
         onConfirm={handleConfirmDelete}
         isLoading={deleteUserMutation.isPending}
+      />
+
+      <ConfirmModal
+        isOpen={!!pendingRoleChange}
+        onClose={() => setPendingRoleChange(null)}
+        onConfirm={performRoleChange}
+        title="Cambiar rol"
+        description={
+          pendingRoleChange
+            ? `${pendingRoleChange.user.nombre || pendingRoleChange.user.displayName} pasará a ser ${pendingRoleChange.newRole}.`
+            : ''
+        }
+        confirmLabel="Cambiar rol"
+        confirmVariant="primary"
+        loading={updateRole.isPending}
+      />
+
+      <ConfirmModal
+        isOpen={!!pendingPlanDeactivate}
+        onClose={() => setPendingPlanDeactivate(null)}
+        onConfirm={performPlanDeactivate}
+        title="Desactivar plan"
+        description="El usuario perderá el acceso a su plan activo."
+        confirmLabel="Desactivar"
+        loading={updatePlan.isPending}
+      />
+
+      <ConfirmModal
+        isOpen={!!pendingDisableToggle}
+        onClose={() => setPendingDisableToggle(null)}
+        onConfirm={performToggleDisabled}
+        title={pendingDisableToggle?.nextDisabled ? 'Desactivar usuario' : 'Reactivar usuario'}
+        description={
+          pendingDisableToggle
+            ? `${pendingDisableToggle.user.nombre || pendingDisableToggle.user.displayName} ${pendingDisableToggle.nextDisabled ? 'no podrá acceder hasta que lo reactives' : 'podrá volver a usar la app'}.`
+            : ''
+        }
+        confirmLabel={pendingDisableToggle?.nextDisabled ? 'Desactivar' : 'Reactivar'}
+        confirmVariant={pendingDisableToggle?.nextDisabled ? 'danger' : 'primary'}
+        loading={toggleDisabled.isPending}
       />
     </div>
   )

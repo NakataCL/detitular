@@ -11,7 +11,7 @@ import {
   Eye,
   Lock
 } from '../../utils/icons'
-import { Card, Button, Badge, EmptyState, Skeleton } from '../../components/ui'
+import { Card, Button, Badge, EmptyState, Skeleton, ConfirmModal } from '../../components/ui'
 import Input from '../../components/ui/Input'
 import { EventForm, EventAttendeesManager } from '../../components/events'
 import {
@@ -34,6 +34,8 @@ const AdminEventos = () => {
   const [editingEvent, setEditingEvent] = useState(null)
   const [viewingEventId, setViewingEventId] = useState(null)
   const [migrating, setMigrating] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(null)
+  const [confirmingMigrate, setConfirmingMigrate] = useState(false)
 
   const { data: events, isLoading } = useAllEvents()
   const createEvent = useCreateEvent()
@@ -45,8 +47,7 @@ const AdminEventos = () => {
     e => e.isPrivate === undefined || !Array.isArray(e.registeredUserIds)
   ).length
 
-  const handleMigrate = async () => {
-    if (!window.confirm(`Se actualizarán ${legacyCount} evento(s) con los nuevos campos de privacidad. ¿Continuar?`)) return
+  const performMigrate = async () => {
     setMigrating(true)
     try {
       const { migrated } = await migrateLegacyEvents()
@@ -55,6 +56,7 @@ const AdminEventos = () => {
       toast.error(error.message || 'Error en la migración')
     } finally {
       setMigrating(false)
+      setConfirmingMigrate(false)
     }
   }
 
@@ -90,14 +92,19 @@ const AdminEventos = () => {
     }
   }
 
-  const handleDeleteEvent = async (eventId) => {
-    if (!window.confirm('¿Estás seguro de eliminar este evento?')) return
+  const handleDeleteEvent = (eventId) => {
+    setConfirmingDelete(eventId)
+  }
 
+  const performDelete = async () => {
+    if (!confirmingDelete) return
     try {
-      await deleteEvent.mutateAsync(eventId)
+      await deleteEvent.mutateAsync(confirmingDelete)
       toast.success('Evento eliminado')
-    } catch (error) {
+    } catch {
       toast.error('Error al eliminar evento')
+    } finally {
+      setConfirmingDelete(null)
     }
   }
 
@@ -122,7 +129,7 @@ const AdminEventos = () => {
           <p className="text-sm text-amber-800 dark:text-amber-200">
             Hay {legacyCount} evento(s) sin los campos de privacidad. Ejecuta la migración para habilitarlos.
           </p>
-          <Button size="sm" variant="outline" loading={migrating} onClick={handleMigrate} className="flex-shrink-0">
+          <Button size="sm" variant="outline" loading={migrating} onClick={() => setConfirmingMigrate(true)} className="flex-shrink-0">
             Migrar eventos antiguos
           </Button>
         </div>
@@ -200,6 +207,27 @@ const AdminEventos = () => {
           onClose={() => setViewingEventId(null)}
         />
       )}
+
+      <ConfirmModal
+        isOpen={!!confirmingDelete}
+        onClose={() => setConfirmingDelete(null)}
+        onConfirm={performDelete}
+        title="Eliminar evento"
+        description="Esta acción es definitiva. Las inscripciones asociadas también desaparecerán."
+        confirmLabel="Eliminar evento"
+        loading={deleteEvent.isPending}
+      />
+
+      <ConfirmModal
+        isOpen={confirmingMigrate}
+        onClose={() => setConfirmingMigrate(false)}
+        onConfirm={performMigrate}
+        title="Migrar eventos antiguos"
+        description={`Se actualizarán ${legacyCount} evento(s) con los nuevos campos de privacidad.`}
+        confirmLabel="Migrar"
+        confirmVariant="primary"
+        loading={migrating}
+      />
     </div>
   )
 }
