@@ -22,23 +22,35 @@ export const THEME_COLORS = {
 export const EVENT_TYPES = {
   partido: {
     label: 'Partido',
+    short: 'PAR',
     color: '#dc2626',
-    bgClass: 'badge-partido'
+    bgClass: 'badge-partido',
+    bannerClass: 'bg-red-700',
+    ctaClass: 'bg-red-700 hover:bg-red-800 text-white'
   },
   torneo: {
     label: 'Torneo',
+    short: 'TOR',
     color: '#f39c12',
-    bgClass: 'badge-torneo'
+    bgClass: 'badge-torneo',
+    bannerClass: 'bg-amber-600',
+    ctaClass: 'bg-amber-600 hover:bg-amber-700 text-white'
   },
   entrenamiento: {
     label: 'Entrenamiento',
+    short: 'ENT',
     color: '#3498db',
-    bgClass: 'badge-entrenamiento'
+    bgClass: 'badge-entrenamiento',
+    bannerClass: 'bg-blue-600',
+    ctaClass: 'bg-blue-600 hover:bg-blue-700 text-white'
   },
   otro: {
     label: 'Otro',
+    short: 'OTR',
     color: '#9b59b6',
-    bgClass: 'badge-otro'
+    bgClass: 'badge-otro',
+    bannerClass: 'bg-violet-600',
+    ctaClass: 'bg-violet-600 hover:bg-violet-700 text-white'
   }
 }
 
