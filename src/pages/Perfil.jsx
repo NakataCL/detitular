@@ -1,11 +1,12 @@
 // Página de Perfil del jugador
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, ChevronRight, Shield, Edit2 } from '../utils/icons'
+import { LogOut, ChevronRight, Shield, Edit2, Bell, BellOff } from '../utils/icons'
 import { Card, Button, Spinner, Modal } from '../components/ui'
 import { ProfileForm, PlanCard, PlayerCard } from '../components/profile'
 import { useAuth } from '../context/AuthContext'
 import { usePlayer } from '../hooks/usePlayer'
+import { useEventReminders } from '../hooks/useEventReminders'
 import { POSITIONS, FOOT_OPTIONS } from '../utils/constants'
 import toast from 'react-hot-toast'
 
@@ -54,6 +55,14 @@ const Perfil = () => {
           Mi Plan
         </h2>
         <PlanCard plan={player?.plan} />
+      </div>
+
+      {/* Recordatorios */}
+      <div>
+        <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-4">
+          Recordatorios
+        </h2>
+        <RemindersCard />
       </div>
 
       {/* Info */}
@@ -127,6 +136,78 @@ const Perfil = () => {
         />
       </Modal>
     </div>
+  )
+}
+
+const RemindersCard = () => {
+  const { enabled, permission, supported, triggersSupported, enable, disable } = useEventReminders()
+
+  if (!supported) {
+    return (
+      <Card>
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+            <BellOff className="w-5 h-5 text-zinc-500 dark:text-zinc-400" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+              No disponible
+            </p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+              Tu navegador no soporta notificaciones locales.
+            </p>
+          </div>
+        </div>
+      </Card>
+    )
+  }
+
+  const handleToggle = async () => {
+    if (enabled) {
+      await disable()
+      toast.success('Recordatorios desactivados')
+      return
+    }
+    const ok = await enable()
+    if (ok) toast.success('Recordatorios activados')
+    else if (permission === 'denied') {
+      toast.error('Permiso denegado. Activa las notificaciones en el navegador.')
+    }
+  }
+
+  return (
+    <Card>
+      <div className="flex items-start gap-3">
+        <div className={`p-2 rounded-xl ${enabled ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'}`}>
+          {enabled ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+            Avisarme 1h antes de cada evento
+          </p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+            {triggersSupported
+              ? 'La notificación llega aunque la app esté cerrada.'
+              : 'Tu navegador sólo envía recordatorios cuando la app está abierta.'}
+          </p>
+        </div>
+        <button
+          onClick={handleToggle}
+          aria-pressed={enabled}
+          aria-label={enabled ? 'Desactivar recordatorios' : 'Activar recordatorios'}
+          className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
+            enabled ? 'bg-emerald-600' : 'bg-zinc-300 dark:bg-zinc-700'
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+              enabled ? 'translate-x-5' : 'translate-x-0.5'
+            }`}
+            aria-hidden="true"
+          />
+        </button>
+      </div>
+    </Card>
   )
 }
 

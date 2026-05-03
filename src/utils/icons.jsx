@@ -3,6 +3,8 @@ import {
   faArrowLeft,
   faArrowRight,
   faArrowTrendUp,
+  faBell,
+  faBellSlash,
   faBolt,
   faTriangleExclamation,
   faCalendarDays,
@@ -63,6 +65,8 @@ export const AlertCircle = createIcon(faCircleExclamation, 'AlertCircle')
 export const AlertTriangle = createIcon(faTriangleExclamation, 'AlertTriangle')
 export const ArrowLeft = createIcon(faArrowLeft, 'ArrowLeft')
 export const ArrowRight = createIcon(faArrowRight, 'ArrowRight')
+export const Bell = createIcon(faBell, 'Bell')
+export const BellOff = createIcon(faBellSlash, 'BellOff')
 export const Calendar = createIcon(faCalendarDays, 'Calendar')
 export const CalendarPlus = createIcon(faCalendarPlus, 'CalendarPlus')
 export const Camera = createIcon(faCamera, 'Camera')
