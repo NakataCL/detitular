@@ -3,10 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { MapPin, Users, Lock } from '../../utils/icons'
+import { MapPin, Users, Lock, Clock } from '../../utils/icons'
 import { Badge, Button } from '../ui'
 import { getEventStatus, getTimeRemaining } from '../../utils/helpers'
 import { EVENT_TYPES, REGISTRATION_STATUS } from '../../utils/constants'
+import { useMyWaitlist, useJoinWaitlist, useLeaveWaitlist } from '../../hooks/useWaitlist'
+import { useAuth } from '../../context/AuthContext'
+import toast from 'react-hot-toast'
 
 const EventCard = ({
   event,
@@ -214,7 +217,11 @@ const EventCard = ({
                 </Button>
               )}
 
-              {status === 'lleno' && (
+              {status === 'lleno' && !event.isPrivate && (
+                <WaitlistButton eventId={event.id} />
+              )}
+
+              {status === 'lleno' && event.isPrivate && (
                 <Button fullWidth variant="secondary" disabled>
                   Cupos agotados
                 </Button>
@@ -230,6 +237,70 @@ const EventCard = ({
         )}
       </button>
     </motion.div>
+  )
+}
+
+const WaitlistButton = ({ eventId }) => {
+  const { isAuthenticated } = useAuth()
+  const { data: entries } = useMyWaitlist()
+  const join = useJoinWaitlist()
+  const leave = useLeaveWaitlist()
+
+  const myEntry = (entries || []).find(e => e.eventId === eventId)
+
+  if (!isAuthenticated) {
+    return (
+      <Button fullWidth variant="outline" icon={Clock} disabled>
+        Inicia sesión para apuntarte
+      </Button>
+    )
+  }
+
+  if (myEntry) {
+    return (
+      <div className="flex flex-col gap-2">
+        <Button fullWidth variant="secondary" icon={Clock} disabled>
+          En lista de espera
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={async (e) => {
+            e.stopPropagation()
+            try {
+              await leave.mutateAsync({ entryId: myEntry.id, eventId })
+              toast.success('Saliste de la lista de espera')
+            } catch {
+              toast.error('No se pudo actualizar')
+            }
+          }}
+          loading={leave.isPending}
+          className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+        >
+          Salir de la lista
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <Button
+      fullWidth
+      variant="outline"
+      icon={Clock}
+      onClick={async (e) => {
+        e.stopPropagation()
+        try {
+          await join.mutateAsync(eventId)
+          toast.success('Apuntado a la lista de espera')
+        } catch {
+          toast.error('No se pudo apuntar')
+        }
+      }}
+      loading={join.isPending}
+    >
+      Apúntame a la lista de espera
+    </Button>
   )
 }
 

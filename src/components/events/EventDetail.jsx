@@ -7,7 +7,8 @@ import {
   Share2,
   CalendarPlus,
   ArrowLeft,
-  Lock
+  Lock,
+  Clock
 } from '../../utils/icons'
 import { useNavigate } from 'react-router-dom'
 import { Card, Badge, Button, Countdown, Avatar } from '../ui'
@@ -15,6 +16,11 @@ import { formatDateTime, formatSlots, getEventStatus, shareEvent } from '../../u
 import { downloadICS } from '../../utils/calendar'
 import { EVENT_TYPES, REGISTRATION_STATUS } from '../../utils/constants'
 import { useAuth } from '../../context/AuthContext'
+import {
+  useMyWaitlistPosition,
+  useJoinWaitlist,
+  useLeaveWaitlist
+} from '../../hooks/useWaitlist'
 import toast from 'react-hot-toast'
 
 const EventDetail = ({
@@ -235,7 +241,11 @@ const EventDetail = ({
             </div>
           )}
 
-          {status === 'lleno' && (
+          {status === 'lleno' && !event.isPrivate && (
+            <WaitlistAction eventId={event.id} isAuthenticated={isAuthenticated} />
+          )}
+
+          {status === 'lleno' && event.isPrivate && (
             <Button fullWidth size="lg" variant="secondary" disabled>
               Cupos agotados
             </Button>
@@ -273,6 +283,83 @@ const EventDetail = ({
           </Card>
         )}
       </div>
+    </div>
+  )
+}
+
+const WaitlistAction = ({ eventId, isAuthenticated }) => {
+  const { entry, position, isLoading } = useMyWaitlistPosition(eventId)
+  const join = useJoinWaitlist()
+  const leave = useLeaveWaitlist()
+
+  if (!isAuthenticated) {
+    return (
+      <div className="space-y-2 text-center">
+        <Button fullWidth size="lg" variant="secondary" disabled icon={Clock}>
+          Cupos agotados
+        </Button>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          Inicia sesión para apuntarte a la lista de espera.
+        </p>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <Button fullWidth size="lg" variant="secondary" disabled>
+        Cargando...
+      </Button>
+    )
+  }
+
+  if (entry) {
+    return (
+      <div className="space-y-2">
+        <Button fullWidth size="lg" variant="success" disabled icon={Clock}>
+          En lista de espera {position ? `· #${position}` : ''}
+        </Button>
+        <Button
+          fullWidth
+          variant="ghost"
+          onClick={async () => {
+            try {
+              await leave.mutateAsync({ entryId: entry.id, eventId })
+              toast.success('Saliste de la lista de espera')
+            } catch {
+              toast.error('No se pudo actualizar')
+            }
+          }}
+          loading={leave.isPending}
+        >
+          Salir de la lista
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-2 text-center">
+      <Button
+        fullWidth
+        size="lg"
+        variant="outline"
+        icon={Clock}
+        onClick={async () => {
+          try {
+            await join.mutateAsync(eventId)
+            toast.success('Apuntado a la lista de espera')
+          } catch {
+            toast.error('No se pudo apuntar')
+          }
+        }}
+        loading={join.isPending}
+      >
+        Apúntame a la lista de espera
+      </Button>
+      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+        Te avisaremos si se libera un cupo.
+      </p>
     </div>
   )
 }

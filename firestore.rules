@@ -85,5 +85,20 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // Lista de espera: cada usuario gestiona la suya, admin ve y borra todo.
+    match /waitlists/{entryId} {
+      // Admin: acceso total
+      allow read, write: if isAdmin();
+
+      // Usuario: lectura/borrado de SUS propias entradas
+      allow read, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+
+      // Usuario: crea su entrada (notified arranca en false)
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.get('notified', false) == false;
+    }
   }
 }

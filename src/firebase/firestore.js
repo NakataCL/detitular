@@ -846,3 +846,64 @@ export const subscribeToUserRegistrations = (userId, callback) => {
     callback(registrations)
   })
 }
+
+// ============================================
+// LISTA DE ESPERA (WAITLISTS)
+// ============================================
+
+/**
+ * Apunta al usuario actual a la lista de espera de un evento.
+ * No-op si ya estaba apuntado.
+ */
+export const addToWaitlist = async (eventId, userId) => {
+  // Buscar entrada existente
+  const ref = collection(db, 'waitlists')
+  const q = query(
+    ref,
+    where('eventId', '==', eventId),
+    where('userId', '==', userId)
+  )
+  const snap = await getDocs(q)
+  if (!snap.empty) {
+    return { id: snap.docs[0].id, ...snap.docs[0].data() }
+  }
+
+  const docRef = await addDoc(ref, {
+    eventId,
+    userId,
+    notified: false,
+    createdAt: serverTimestamp()
+  })
+  return { id: docRef.id, eventId, userId, notified: false }
+}
+
+/**
+ * Saca al usuario de la lista de espera (por id de entrada).
+ */
+export const removeFromWaitlist = async (entryId) => {
+  await deleteDoc(doc(db, 'waitlists', entryId))
+}
+
+/**
+ * Devuelve las entradas de waitlist del usuario.
+ */
+export const getMyWaitlistEntries = async (userId) => {
+  const ref = collection(db, 'waitlists')
+  const q = query(ref, where('userId', '==', userId))
+  const snap = await getDocs(q)
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+}
+
+/**
+ * Devuelve la lista de espera de un evento, ordenada por createdAt asc.
+ */
+export const getEventWaitlist = async (eventId) => {
+  const ref = collection(db, 'waitlists')
+  const q = query(
+    ref,
+    where('eventId', '==', eventId),
+    orderBy('createdAt', 'asc')
+  )
+  const snap = await getDocs(q)
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+}
