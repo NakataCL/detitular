@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LogOut, ChevronRight, Shield, Edit2, Bell, BellOff } from '../utils/icons'
-import { Card, Button, Spinner, Modal } from '../components/ui'
+import { Card, Button, Skeleton, Modal } from '../components/ui'
 import { ProfileForm, PlanCard, PlayerCard } from '../components/profile'
 import { useAuth } from '../context/AuthContext'
 import { usePlayer } from '../hooks/usePlayer'
@@ -27,7 +27,16 @@ const Perfil = () => {
   }
 
   if (isLoading) {
-    return <Spinner fullScreen />
+    return (
+      <div className="px-4 sm:px-6 md:px-12 pt-8 sm:pt-10 pb-12 md:pt-14 md:pb-20 max-w-3xl mx-auto space-y-10">
+        <Skeleton.PlayerCard />
+        <div>
+          <Skeleton variant="text" className="w-32 mb-4" />
+          <Skeleton.PlanCard />
+        </div>
+        <Skeleton.PlanCard />
+      </div>
+    )
   }
 
   return (

@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { EventDetail, RegistrationConfirmSheet } from '../components/events'
-import { Spinner } from '../components/ui'
+import { Skeleton } from '../components/ui'
 import { useEvent } from '../hooks/useEvents'
 import {
   useEventRegistrations,
@@ -57,7 +57,11 @@ const EventoDetalle = () => {
   }
 
   if (loadingEvent) {
-    return <Spinner fullScreen />
+    return (
+      <div className="px-4 sm:px-6 md:px-12 pt-8 sm:pt-10 pb-12 md:pt-14 md:pb-20 max-w-3xl mx-auto">
+        <Skeleton.EventDetail />
+      </div>
+    )
   }
 
   if (!event) {

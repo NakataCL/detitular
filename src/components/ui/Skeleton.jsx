@@ -92,4 +92,53 @@ Skeleton.Stats = () => (
   </div>
 )
 
+Skeleton.PlayerCard = () => (
+  <div className="rounded-3xl bg-zinc-100 dark:bg-zinc-900 p-6 md:p-8 min-h-[220px] space-y-6">
+    <div className="flex items-center gap-4">
+      <Skeleton variant="avatar" className="w-16 h-16" rounded />
+      <div className="flex-1 space-y-2">
+        <Skeleton variant="title" className="w-2/3" />
+        <Skeleton variant="text" className="w-1/3" />
+      </div>
+    </div>
+    <div className="grid grid-cols-3 gap-4 pt-4 border-t border-zinc-200/60 dark:border-zinc-800">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="space-y-2">
+          <Skeleton variant="title" className="w-1/2" />
+          <Skeleton variant="text" className="w-3/4" />
+        </div>
+      ))}
+    </div>
+  </div>
+)
+
+Skeleton.PlanCard = () => (
+  <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200/80 dark:border-zinc-800 space-y-4">
+    <div className="flex justify-between">
+      <Skeleton variant="title" className="w-1/3" />
+      <Skeleton variant="text" className="w-16" />
+    </div>
+    <Skeleton variant="text" className="w-full" />
+    <div className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded-full" />
+    <Skeleton variant="text" className="w-1/2" />
+  </div>
+)
+
+Skeleton.EventDetail = () => (
+  <div className="space-y-6">
+    <Skeleton variant="card" className="h-44 md:h-56 rounded-2xl" />
+    <div className="space-y-3">
+      <Skeleton variant="title" className="w-2/3" />
+      <Skeleton variant="text" className="w-1/2" />
+      <Skeleton variant="text" className="w-1/3" />
+    </div>
+    <div className="space-y-3">
+      <Skeleton variant="text" className="w-full" />
+      <Skeleton variant="text" className="w-3/4" />
+      <Skeleton variant="text" className="w-2/3" />
+    </div>
+    <Skeleton variant="button" className="h-12 w-full" />
+  </div>
+)
+
 export default Skeleton

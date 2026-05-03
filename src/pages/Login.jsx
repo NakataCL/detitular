@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
-import { Button, Card, Spinner } from '../components/ui'
+import { Button, Card, Skeleton } from '../components/ui'
 import { APP_NAME } from '../utils/constants'
 import toast from 'react-hot-toast'
 
@@ -31,7 +31,16 @@ const Login = () => {
   }
 
   if (loading) {
-    return <Spinner fullScreen />
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-[#fafafa] dark:bg-zinc-950">
+        <div className="w-full max-w-sm space-y-6">
+          <Skeleton variant="avatar" className="w-16 h-16 mx-auto" />
+          <Skeleton variant="title" className="w-2/3 mx-auto" />
+          <Skeleton variant="text" className="w-1/2 mx-auto" />
+          <Skeleton variant="card" className="h-32 rounded-2xl" />
+        </div>
+      </div>
+    )
   }
 
   return (
