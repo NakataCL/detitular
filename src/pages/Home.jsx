@@ -9,6 +9,7 @@ import { Button, Skeleton } from '../components/ui'
 import { EventCard } from '../components/events'
 import { useNextEvent, useActiveEvents } from '../hooks/useEvents'
 import { useStats } from '../hooks/useStats'
+import { useExperiences } from '../hooks/useExperiences'
 import { useAuth } from '../context/AuthContext'
 import { APP_NAME, EVENT_TYPES } from '../utils/constants'
 import { getTimeRemaining } from '../utils/helpers'
@@ -19,6 +20,7 @@ const Home = () => {
   const { data: nextEvent, isLoading: loadingNext } = useNextEvent()
   const { data: activeEvents, isLoading: loadingEvents } = useActiveEvents()
   const { data: stats } = useStats({ enabled: isAuthenticated })
+  const { data: experiences } = useExperiences()
 
   const handleLogin = async () => {
     try {
@@ -123,6 +125,54 @@ const Home = () => {
           </div>
         )}
       </motion.section>
+
+      {/* Últimas experiencias */}
+      {experiences && experiences.length > 0 && (
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18 }}
+        >
+          <header className="flex items-center justify-between mb-5">
+            <h2 className="text-xs uppercase tracking-[0.18em] font-bold text-zinc-500 dark:text-zinc-400">
+              Últimas experiencias
+            </h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/experiencias')}
+              icon={ArrowRight}
+              iconPosition="right"
+            >
+              Ver galería
+            </Button>
+          </header>
+          <div className="grid grid-cols-3 gap-2">
+            {experiences.slice(0, 3).map((exp) => (
+              <button
+                key={exp.id}
+                type="button"
+                onClick={() => navigate('/experiencias')}
+                aria-label={`Ver galería: ${exp.title}`}
+                className="aspect-square rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 group relative"
+              >
+                {exp.mediaType === 'image' && exp.mediaUrl ? (
+                  <img
+                    src={exp.mediaUrl}
+                    alt={exp.title}
+                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-zinc-400">
+                    <Calendar className="w-6 h-6" aria-hidden="true" />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        </motion.section>
+      )}
 
       {/* CTA login (anónimo) */}
       {!isAuthenticated && (
