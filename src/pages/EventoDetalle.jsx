@@ -1,6 +1,7 @@
 // Página de detalle de evento
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { EventDetail } from '../components/events'
+import { EventDetail, RegistrationConfirmSheet } from '../components/events'
 import { Spinner } from '../components/ui'
 import { useEvent } from '../hooks/useEvents'
 import {
@@ -16,6 +17,7 @@ const EventoDetalle = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
+  const [confirmedEvent, setConfirmedEvent] = useState(null)
 
   const { data: event, isLoading: loadingEvent } = useEvent(id)
   const { data: registrations } = useEventRegistrations(id)
@@ -33,6 +35,7 @@ const EventoDetalle = () => {
     try {
       await createRegistration.mutateAsync(id)
       toast.success('¡Te has inscrito exitosamente!')
+      if (event) setConfirmedEvent(event)
     } catch (error) {
       toast.error(error.message || 'Error al inscribirse')
     }
@@ -86,6 +89,12 @@ const EventoDetalle = () => {
         onCancelRegistration={handleCancelRegistration}
         isRegistering={createRegistration.isPending}
         isCanceling={cancelRegistration.isPending}
+      />
+
+      <RegistrationConfirmSheet
+        event={confirmedEvent}
+        isOpen={!!confirmedEvent}
+        onClose={() => setConfirmedEvent(null)}
       />
     </div>
   )

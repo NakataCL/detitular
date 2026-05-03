@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Calendar, List, Search } from '../utils/icons'
 import { Button, EmptyState, Skeleton } from '../components/ui'
 import Input from '../components/ui/Input'
-import { EventCard, EventCalendar } from '../components/events'
+import { EventCard, EventCalendar, RegistrationConfirmSheet } from '../components/events'
 import { useActiveEvents } from '../hooks/useEvents'
 import { useMyRegistrations, useCreateRegistration } from '../hooks/useRegistrations'
 import { useAuth } from '../context/AuthContext'
@@ -18,6 +18,7 @@ const Eventos = () => {
   const [viewMode, setViewMode] = useState('list')
   const [filterType, setFilterType] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
+  const [confirmedEvent, setConfirmedEvent] = useState(null)
 
   const { data: events, isLoading, error } = useActiveEvents()
   const { data: myRegistrations } = useMyRegistrations()
@@ -45,6 +46,8 @@ const Eventos = () => {
     try {
       await createRegistration.mutateAsync(eventId)
       toast.success('¡Inscripción exitosa!')
+      const event = events?.find(e => e.id === eventId)
+      if (event) setConfirmedEvent(event)
     } catch (error) {
       toast.error(error.message || 'Error al inscribirse')
     }
@@ -182,6 +185,12 @@ const Eventos = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <RegistrationConfirmSheet
+        event={confirmedEvent}
+        isOpen={!!confirmedEvent}
+        onClose={() => setConfirmedEvent(null)}
+      />
     </div>
   )
 }

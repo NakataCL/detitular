@@ -13,7 +13,8 @@ const Modal = ({
   showClose = true,
   closeOnOverlay = true,
   closeOnEsc = true,
-  footer = null
+  footer = null,
+  bottomSheet = false
 }) => {
   const modalRef = useRef(null)
 
@@ -56,10 +57,41 @@ const Modal = ({
     }
   }
 
+  const containerClass = bottomSheet
+    ? 'fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4'
+    : 'fixed inset-0 z-50 flex items-center justify-center p-4'
+
+  const sheetShape = bottomSheet
+    ? `relative w-full md:${sizes[size]}
+       bg-white dark:bg-zinc-900
+       rounded-t-3xl md:rounded-2xl shadow-xl
+       border-t md:border border-zinc-200/80 dark:border-zinc-700
+       max-h-[90vh] overflow-hidden
+       flex flex-col
+       safe-area-bottom`
+    : `relative w-full ${sizes[size]}
+       bg-white dark:bg-zinc-900
+       rounded-2xl shadow-xl
+       border border-zinc-200/80 dark:border-zinc-700
+       max-h-[90vh] overflow-hidden
+       flex flex-col`
+
+  const sheetMotion = bottomSheet
+    ? {
+        initial: { opacity: 0, y: 60 },
+        animate: { opacity: 1, y: 0 },
+        exit: { opacity: 0, y: 60 }
+      }
+    : {
+        initial: { opacity: 0, scale: 0.96, y: 10 },
+        animate: { opacity: 1, scale: 1, y: 0 },
+        exit: { opacity: 0, scale: 0.96, y: 10 }
+      }
+
   const modalContent = (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className={containerClass}>
           {/* Overlay */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -73,18 +105,9 @@ const Modal = ({
           {/* Modal */}
           <motion.div
             ref={modalRef}
-            initial={{ opacity: 0, scale: 0.96, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 10 }}
-            transition={{ duration: 0.15 }}
-            className={`
-              relative w-full ${sizes[size]}
-              bg-white dark:bg-zinc-900
-              rounded-2xl shadow-xl
-              border border-zinc-200/80 dark:border-zinc-700
-              max-h-[90vh] overflow-hidden
-              flex flex-col
-            `}
+            {...sheetMotion}
+            transition={{ duration: 0.18 }}
+            className={sheetShape}
           >
             {/* Header */}
             {(title || showClose) && (

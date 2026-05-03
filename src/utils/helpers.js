@@ -177,43 +177,6 @@ export const truncate = (text, maxLength = 100) => {
 }
 
 /**
- * Crea archivo ICS para añadir al calendario
- */
-export const createCalendarEvent = (event) => {
-  const eventDate = event.date?.toDate ? event.date.toDate() : new Date(event.date)
-  const endDate = new Date(eventDate.getTime() + 2 * 60 * 60 * 1000) // +2 horas
-
-  const formatICSDate = (date) => {
-    return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
-  }
-
-  const icsContent = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Academia de Fútbol//ES',
-    'BEGIN:VEVENT',
-    `DTSTART:${formatICSDate(eventDate)}`,
-    `DTEND:${formatICSDate(endDate)}`,
-    `SUMMARY:${event.title}`,
-    `DESCRIPTION:${event.description || ''}`,
-    `LOCATION:${event.location || ''}`,
-    'END:VEVENT',
-    'END:VCALENDAR'
-  ].join('\r\n')
-
-  // Crear blob y descargar
-  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `${event.title.replace(/\s+/g, '_')}.ics`
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
-}
-
-/**
  * Comparte un evento usando Web Share API
  */
 export const shareEvent = async (event) => {

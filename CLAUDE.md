@@ -41,6 +41,8 @@ No test framework is configured.
 
 **Firestore collections:** `users`, `events`, `registrations`, `experiences`
 
+- `events` documents may include an optional `instructions` string. When present it surfaces in the post-registration confirmation sheet (see `RegistrationConfirmSheet`).
+
 **Roles:** `admin` (configured via `VITE_ADMIN_EMAIL`) and `jugador` (default for all other users).
 
 ## Key Patterns

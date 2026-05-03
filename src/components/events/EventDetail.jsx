@@ -11,7 +11,8 @@ import {
 } from '../../utils/icons'
 import { useNavigate } from 'react-router-dom'
 import { Card, Badge, Button, Countdown, Avatar } from '../ui'
-import { formatDateTime, formatSlots, getEventStatus, shareEvent, createCalendarEvent } from '../../utils/helpers'
+import { formatDateTime, formatSlots, getEventStatus, shareEvent } from '../../utils/helpers'
+import { downloadICS } from '../../utils/calendar'
 import { EVENT_TYPES, REGISTRATION_STATUS } from '../../utils/constants'
 import { useAuth } from '../../context/AuthContext'
 import toast from 'react-hot-toast'
@@ -40,7 +41,7 @@ const EventDetail = ({
   }
 
   const handleAddToCalendar = () => {
-    createCalendarEvent(event)
+    downloadICS(event)
     toast.success('Descargando archivo de calendario')
   }
 

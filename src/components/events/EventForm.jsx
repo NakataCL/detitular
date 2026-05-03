@@ -27,6 +27,7 @@ const EventForm = ({
     maxSlots: 16,
     location: '',
     description: '',
+    instructions: '',
     isPrivate: false
   })
   const [errors, setErrors] = useState({})
@@ -46,6 +47,7 @@ const EventForm = ({
         maxSlots: initialData.maxSlots || 16,
         location: initialData.location || '',
         description: initialData.description || '',
+        instructions: initialData.instructions || '',
         isPrivate: initialData.isPrivate === true
       })
     } else {
@@ -58,6 +60,7 @@ const EventForm = ({
         maxSlots: 16,
         location: '',
         description: '',
+        instructions: '',
         isPrivate: false
       })
     }
@@ -112,6 +115,7 @@ const EventForm = ({
       maxSlots: parseInt(formData.maxSlots),
       location: formData.location.trim(),
       description: formData.description.trim(),
+      instructions: formData.instructions.trim(),
       isPrivate: !!formData.isPrivate
     }
 
@@ -233,6 +237,18 @@ const EventForm = ({
           onChange={handleChange}
           placeholder="Describe los detalles del evento..."
           rows={4}
+          autoCapitalize="sentences"
+          autoComplete="off"
+        />
+
+        <Textarea
+          label="Instrucciones (opcional)"
+          name="instructions"
+          value={formData.instructions}
+          onChange={handleChange}
+          placeholder="Ej: Presentarse 30 min antes con equipación naranja"
+          rows={2}
+          helperText="Se mostrará en la confirmación de inscripción"
           autoCapitalize="sentences"
           autoComplete="off"
         />
