@@ -12,7 +12,7 @@ import {
 } from '../../utils/icons'
 import { useNavigate } from 'react-router-dom'
 import { Card, Badge, Button, Countdown, Avatar } from '../ui'
-import { formatDateTime, formatSlots, getEventStatus, shareEvent } from '../../utils/helpers'
+import { formatDateTime, formatShortDate, formatSlots, getEventStatus } from '../../utils/helpers'
 import { downloadICS } from '../../utils/calendar'
 import { EVENT_TYPES, REGISTRATION_STATUS } from '../../utils/constants'
 import { useAuth } from '../../context/AuthContext'
@@ -40,9 +40,29 @@ const EventDetail = ({
   const statusConfig = REGISTRATION_STATUS[status]
 
   const handleShare = async () => {
-    const success = await shareEvent(event)
-    if (success) {
-      toast.success('Evento compartido')
+    const shareData = {
+      title: event.title,
+      text: `${event.title} — ${formatShortDate(event.date)}`,
+      url: window.location.href
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData)
+      } catch (err) {
+        if (err?.name !== 'AbortError') {
+          console.error('Error al compartir:', err)
+          toast.error('No se pudo compartir')
+        }
+      }
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      toast.success('Enlace copiado')
+    } catch {
+      toast.error('No se pudo copiar el enlace')
     }
   }
 

@@ -177,36 +177,6 @@ export const truncate = (text, maxLength = 100) => {
 }
 
 /**
- * Comparte un evento usando Web Share API
- */
-export const shareEvent = async (event) => {
-  const eventDate = formatDateTime(event.date)
-
-  const shareData = {
-    title: event.title,
-    text: `${event.title}\n📅 ${eventDate}\n📍 ${event.location || 'Por confirmar'}`,
-    url: window.location.href
-  }
-
-  if (navigator.share) {
-    try {
-      await navigator.share(shareData)
-      return true
-    } catch (err) {
-      if (err.name !== 'AbortError') {
-        console.error('Error al compartir:', err)
-      }
-      return false
-    }
-  } else {
-    // Fallback: copiar al portapapeles
-    const text = `${shareData.title}\n${shareData.text}\n${shareData.url}`
-    await navigator.clipboard.writeText(text)
-    return true
-  }
-}
-
-/**
  * Extrae ID de video de YouTube o Vimeo
  */
 export const getVideoId = (url) => {
