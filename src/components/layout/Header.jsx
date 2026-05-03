@@ -37,7 +37,7 @@ const Header = ({
   const getDefaultTitle = () => {
     const paths = {
       '/': APP_NAME,
-      '/registros': 'Mis Registros',
+      '/registros': 'Mis convocatorias',
       '/eventos': 'Eventos',
       '/experiencias': 'Experiencias',
       '/perfil': 'Mi Perfil',

@@ -137,7 +137,7 @@ export const NAV_ITEMS = [
   },
   {
     path: '/registros',
-    label: 'Registros',
+    label: 'Mis convocatorias',
     icon: 'ClipboardList',
     public: false
   },

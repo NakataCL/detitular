@@ -1,5 +1,5 @@
 // Hook para gestión de inscripciones
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   createRegistration,
   getUserRegistrations,
@@ -9,7 +9,8 @@ import {
   markAttendance,
   adminAddUserToEvent,
   adminRemoveUserFromEvent,
-  subscribeToUserRegistrations
+  subscribeToUserRegistrations,
+  getEvent
 } from '../firebase/firestore'
 import { useAuth } from '../context/AuthContext'
 import { useEffect, useState } from 'react'
@@ -168,6 +169,40 @@ export const useMyRegistrationsRealtime = () => {
   }, [user?.uid])
 
   return { registrations, loading }
+}
+
+/**
+ * Hook para obtener inscripciones del usuario con datos de evento hidratados
+ * (un fetch por evento, comparte cache con useEvent).
+ */
+export const useMyRegistrationsHydrated = () => {
+  const { data: regs, isLoading: loadingRegs } = useMyRegistrations()
+
+  const eventQueries = useQueries({
+    queries: (regs || []).map(reg => ({
+      queryKey: ['event', reg.eventId],
+      queryFn: async () => {
+        try {
+          return await getEvent(reg.eventId)
+        } catch (err) {
+          if (err?.code === 'permission-denied') return null
+          throw err
+        }
+      },
+      enabled: !!reg.eventId,
+      staleTime: 1000 * 60 * 2
+    }))
+  })
+
+  const data = (regs || []).map((reg, i) => ({
+    ...reg,
+    event: eventQueries[i]?.data || null
+  }))
+
+  const isLoading =
+    loadingRegs || (regs && regs.length > 0 && eventQueries.some(q => q.isLoading))
+
+  return { data, isLoading }
 }
 
 /**

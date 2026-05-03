@@ -17,7 +17,7 @@ const BottomNav = () => {
 
   const navItems = [
     { path: '/', icon: Home, label: 'Inicio', public: true },
-    { path: '/registros', icon: ClipboardList, label: 'Registros', public: false },
+    { path: '/registros', icon: ClipboardList, label: 'Mis convocatorias', public: false },
     { path: '/eventos', icon: Calendar, label: 'Eventos', public: true },
     { path: '/experiencias', icon: Film, label: 'Galería', public: true },
     {

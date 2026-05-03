@@ -1,20 +1,60 @@
-// Página de inscripciones/registros del usuario
-import { useState } from 'react'
+// Página "Mis convocatorias" — inscripciones del usuario por estado temporal
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 import { Clock, MapPin, Check, X, AlertCircle } from '../utils/icons'
-import { Card, Badge, Button, EmptyState, Skeleton } from '../components/ui'
-import { useMyRegistrations, useCancelRegistration } from '../hooks/useRegistrations'
-import { useEvent } from '../hooks/useEvents'
-import { formatShortDate } from '../utils/helpers'
+import { Button, EmptyState, Skeleton, Countdown } from '../components/ui'
+import {
+  useMyRegistrationsHydrated,
+  useCancelRegistration
+} from '../hooks/useRegistrations'
 import { EVENT_TYPES } from '../utils/constants'
 import toast from 'react-hot-toast'
 
+const TABS = [
+  { value: 'upcoming', label: 'Próximas' },
+  { value: 'past', label: 'Pasadas' },
+  { value: 'canceled', label: 'Canceladas' }
+]
+
 const Registros = () => {
   const navigate = useNavigate()
-  const { data: registrations, isLoading } = useMyRegistrations()
+  const [tab, setTab] = useState('upcoming')
   const [cancelingId, setCancelingId] = useState(null)
   const cancelRegistration = useCancelRegistration()
+  const { data: regs, isLoading } = useMyRegistrationsHydrated()
+
+  const groups = useMemo(() => {
+    const now = new Date()
+    const upcoming = []
+    const past = []
+    const canceled = []
+
+    for (const reg of regs) {
+      if (reg.canceledAt) {
+        canceled.push(reg)
+        continue
+      }
+      if (!reg.event) continue
+      const date = reg.event.date?.toDate
+        ? reg.event.date.toDate()
+        : new Date(reg.event.date)
+      if (date >= now) upcoming.push(reg)
+      else past.push(reg)
+    }
+
+    upcoming.sort(byDateAsc)
+    past.sort(byDateDesc)
+    return { upcoming, past, canceled }
+  }, [regs])
+
+  const counts = {
+    upcoming: groups.upcoming.length,
+    past: groups.past.length,
+    canceled: groups.canceled.length
+  }
 
   const handleCancel = async (registration) => {
     setCancelingId(registration.id)
@@ -24,153 +64,292 @@ const Registros = () => {
         eventId: registration.eventId
       })
       toast.success('Inscripción cancelada')
-    } catch (error) {
+    } catch {
       toast.error('Error al cancelar')
     } finally {
       setCancelingId(null)
     }
   }
 
-  if (isLoading) {
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => <Skeleton.EventCard key={i} />)}
+        </div>
+      )
+    }
+
+    const items = groups[tab]
+
+    if (items.length === 0) {
+      if (tab === 'canceled') {
+        return (
+          <EmptyState
+            icon="registrations"
+            title="Sin cancelaciones"
+            description="Las inscripciones canceladas aparecerán aquí."
+          />
+        )
+      }
+      if (tab === 'past') {
+        return (
+          <EmptyState
+            icon="registrations"
+            title="Sin historial"
+            description="Tus eventos pasados aparecerán aquí cuando finalicen."
+          />
+        )
+      }
+      return (
+        <EmptyState
+          icon="registrations"
+          title="Sin convocatorias próximas"
+          description="Aún no estás inscrito a eventos futuros."
+          action={() => navigate('/eventos')}
+          actionLabel="Ver eventos"
+        />
+      )
+    }
+
     return (
-      <div className="px-5 py-6 space-y-3">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton.EventCard key={i} />
-        ))}
+      <div className="space-y-3">
+        {items.map(reg =>
+          tab === 'upcoming' ? (
+            <UpcomingCard
+              key={reg.id}
+              registration={reg}
+              onCancel={() => handleCancel(reg)}
+              isCanceling={cancelingId === reg.id}
+              onView={() => navigate(`/eventos/${reg.eventId}`)}
+            />
+          ) : tab === 'past' ? (
+            <PastCard
+              key={reg.id}
+              registration={reg}
+              onView={() => navigate(`/eventos/${reg.eventId}`)}
+            />
+          ) : (
+            <CanceledCard
+              key={reg.id}
+              registration={reg}
+            />
+          )
+        )}
       </div>
     )
   }
 
   return (
     <div className="px-4 sm:px-6 md:px-12 pt-8 sm:pt-10 pb-12 md:pt-14 md:pb-20 max-w-3xl mx-auto">
-      <div className="mb-10">
-        <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-          Mis Inscripciones
+      <div className="mb-8">
+        <h1 className="font-display text-3xl md:text-4xl text-zinc-900 dark:text-zinc-50 leading-tight">
+          Mis convocatorias
         </h1>
-        <p className="text-sm text-zinc-400 mt-1.5">
-          {registrations?.length || 0} inscripciones
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1.5">
+          Tus inscripciones a eventos
         </p>
       </div>
 
-      {registrations?.length === 0 ? (
-        <EmptyState
-          icon="registrations"
-          title="Sin inscripciones"
-          description="Aún no te has inscrito a ningún evento"
-          action={() => navigate('/eventos')}
-          actionLabel="Ver eventos"
-        />
-      ) : (
-        <div className="space-y-5">
-          {registrations?.map((registration) => (
-            <RegistrationCard
-              key={registration.id}
-              registration={registration}
-              onCancel={() => handleCancel(registration)}
-              isCanceling={cancelingId === registration.id}
-              onViewEvent={() => navigate(`/eventos/${registration.eventId}`)}
-            />
-          ))}
-        </div>
-      )}
+      {/* Tabs */}
+      <div
+        role="tablist"
+        aria-label="Filtrar convocatorias"
+        className="flex gap-2 mb-8 overflow-x-auto no-scrollbar"
+      >
+        {TABS.map(t => {
+          const active = tab === t.value
+          return (
+            <button
+              key={t.value}
+              role="tab"
+              aria-selected={active}
+              onClick={() => setTab(t.value)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${
+                active
+                  ? 'bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900'
+                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+              }`}
+            >
+              {t.label} <span className="opacity-60 tabular-nums">({counts[t.value]})</span>
+            </button>
+          )
+        })}
+      </div>
+
+      {renderContent()}
     </div>
   )
 }
 
-const RegistrationCard = ({
-  registration,
-  onCancel,
-  isCanceling,
-  onViewEvent
-}) => {
-  const { data: event, isLoading } = useEvent(registration.eventId)
+const byDateAsc = (a, b) => {
+  const da = a.event?.date?.toDate?.() || new Date(a.event?.date || 0)
+  const db = b.event?.date?.toDate?.() || new Date(b.event?.date || 0)
+  return da - db
+}
 
-  if (isLoading) {
-    return <Skeleton.EventCard />
-  }
+const byDateDesc = (a, b) => -byDateAsc(a, b)
 
-  if (!event) {
-    return (
-      <Card className="opacity-50">
-        <div className="flex items-center gap-3">
-          <AlertCircle className="w-4 h-4 text-zinc-400" />
-          <span className="text-sm text-zinc-400">Evento no disponible</span>
-        </div>
-      </Card>
-    )
-  }
+// === Cards ===
+
+const UpcomingCard = ({ registration: reg, onCancel, isCanceling, onView }) => {
+  const event = reg.event
+  if (!event) return <UnknownEventCard />
 
   const eventType = EVENT_TYPES[event.type] || EVENT_TYPES.otro
   const eventDate = event.date?.toDate ? event.date.toDate() : new Date(event.date)
-  const isPast = eventDate < new Date()
+  const isAdminAdded = reg.registeredBy === 'admin'
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
+      className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl overflow-hidden"
     >
-      <Card hover onClick={onViewEvent} className="cursor-pointer">
-        <div className="flex items-start gap-3">
-          {/* Date */}
-          <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex flex-col items-center justify-center text-white text-xs font-semibold ${eventType.bgClass}`}>
-            <span className="text-base font-bold leading-none">
-              {eventDate.getDate()}
-            </span>
-            <span className="text-xs uppercase opacity-80">
-              {eventDate.toLocaleString('es', { month: 'short' })}
-            </span>
+      <button
+        type="button"
+        onClick={onView}
+        aria-label={`Ver ${event.title}`}
+        className="w-full text-left"
+      >
+        <div className={`${eventType.bannerClass} text-white px-5 py-3 flex items-center justify-between`}>
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.18em] font-bold opacity-90">
+              {eventType.label}
+            </p>
+            <p className="font-display text-xl leading-tight">
+              {format(eventDate, 'EEE d MMM', { locale: es }).replace('.', '')}
+            </p>
           </div>
+          <p className="font-display text-xl">
+            {format(eventDate, "HH:mm'h'", { locale: es })}
+          </p>
+        </div>
 
-          {/* Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2 mb-1">
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 truncate">
-                {event.title}
-              </h3>
-              {registration.attended && (
-                <Badge variant="success" size="sm">
-                  <Check className="w-3 h-3 mr-1" />
-                  Asistió
-                </Badge>
-              )}
-            </div>
+        <div className="p-5">
+          <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
+            {event.title}
+          </h3>
 
-            <div className="space-y-1 text-xs text-zinc-400">
-              <div className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5" />
-                <span>{formatShortDate(event.date)}</span>
-              </div>
-              {event.location && (
-                <div className="flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5" />
-                  <span className="truncate">{event.location}</span>
-                </div>
-              )}
-            </div>
+          {event.location && (
+            <p className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 mb-4">
+              <MapPin className="w-4 h-4" aria-hidden="true" />
+              {event.location}
+            </p>
+          )}
 
-            {!isPast && (
-              <div className="mt-3">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onCancel()
-                  }}
-                  loading={isCanceling}
-                  className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 px-2"
-                >
-                  <X className="w-3.5 h-3.5 mr-1" />
-                  Cancelar
-                </Button>
-              </div>
-            )}
+          <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50">
+            <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-zinc-500 dark:text-zinc-400">
+              Empieza en
+            </span>
+            <Countdown.Inline targetDate={event.date} />
           </div>
         </div>
-      </Card>
+      </button>
+
+      {!isAdminAdded && (
+        <div className="px-5 pb-5">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onCancel}
+            loading={isCanceling}
+            icon={X}
+            className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+          >
+            Cancelar inscripción
+          </Button>
+        </div>
+      )}
+      {isAdminAdded && (
+        <p className="px-5 pb-5 text-xs text-zinc-500 dark:text-zinc-400">
+          Te inscribió el administrador. Para darte de baja contáctalo directamente.
+        </p>
+      )}
     </motion.div>
   )
 }
+
+const PastCard = ({ registration: reg, onView }) => {
+  const event = reg.event
+  if (!event) return <UnknownEventCard />
+
+  const eventDate = event.date?.toDate ? event.date.toDate() : new Date(event.date)
+
+  return (
+    <motion.button
+      type="button"
+      onClick={onView}
+      whileTap={{ scale: 0.995 }}
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      aria-label={`Ver ${event.title}`}
+      className="w-full text-left bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl px-4 py-3 flex items-center gap-4 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
+    >
+      <div className="flex-shrink-0 text-center">
+        <p className="font-display text-2xl text-zinc-900 dark:text-zinc-50 leading-none">
+          {eventDate.getDate()}
+        </p>
+        <p className="text-[10px] uppercase tracking-widest font-bold text-zinc-500 dark:text-zinc-400 mt-1">
+          {format(eventDate, 'MMM', { locale: es }).replace('.', '')}
+        </p>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 truncate">
+          {event.title}
+        </p>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+          {format(eventDate, "EEE · HH:mm'h'", { locale: es }).replace('.', '')}
+        </p>
+      </div>
+      <AttendanceBadge attended={!!reg.attended} />
+    </motion.button>
+  )
+}
+
+const CanceledCard = ({ registration: reg }) => {
+  const event = reg.event
+  return (
+    <div className="bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-4 py-3 flex items-center gap-3 opacity-70">
+      <div className="w-9 h-9 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
+        <X className="w-4 h-4 text-zinc-500 dark:text-zinc-400" aria-hidden="true" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 truncate">
+          {event?.title || 'Evento'}
+        </p>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+          Cancelada
+          {reg.canceledAt
+            ? ` el ${format(
+                reg.canceledAt?.toDate?.() || new Date(reg.canceledAt),
+                "d MMM",
+                { locale: es }
+              )}`
+            : ''}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+const AttendanceBadge = ({ attended }) =>
+  attended ? (
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+      <Check className="w-3 h-3" aria-hidden="true" />
+      Asistió
+    </span>
+  ) : (
+    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+      No asistió
+    </span>
+  )
+
+const UnknownEventCard = () => (
+  <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-4 flex items-center gap-3 opacity-60">
+    <AlertCircle className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+    <span className="text-sm text-zinc-500 dark:text-zinc-400">Evento no disponible</span>
+  </div>
+)
 
 export default Registros
