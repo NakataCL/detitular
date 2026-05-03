@@ -92,7 +92,7 @@ export default defineConfig({
         skipWaiting: true,
         cleanupOutdatedCaches: true,
         navigateFallback: '/detitular/index.html',
-        navigateFallbackDenylist: [/^\/detitular\/__/],
+        navigateFallbackDenylist: [/^\/detitular\/__/, /^\/detitular\/404\.html$/],
         // Estrategias de cache
         runtimeCaching: [
           {
