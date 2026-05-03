@@ -55,7 +55,7 @@ const Perfil = () => {
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-zinc-400 truncate">{user?.email}</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate">{user?.email}</p>
             {positionLabel && (
               <p className="text-sm text-primary-600 dark:text-primary-400 mt-0.5">{positionLabel}</p>
             )}
@@ -124,7 +124,7 @@ const Perfil = () => {
                   <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
                     Panel de Administración
                   </p>
-                  <p className="text-xs text-zinc-400">
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
                     Gestiona eventos, usuarios y más
                   </p>
                 </div>
@@ -162,7 +162,7 @@ const Perfil = () => {
 
 const InfoRow = ({ label, value, last = false }) => (
   <div className={`flex justify-between py-3 ${!last ? 'border-b border-zinc-100 dark:border-zinc-800' : ''}`}>
-    <span className="text-sm text-zinc-400">{label}</span>
+    <span className="text-sm text-zinc-500 dark:text-zinc-400">{label}</span>
     <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{value}</span>
   </div>
 )

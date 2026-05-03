@@ -145,7 +145,7 @@ const EventAttendeesManager = ({ eventId, onClose }) => {
                 className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <span className="text-sm text-zinc-400 w-6 flex-shrink-0">{index + 1}</span>
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400 w-6 flex-shrink-0">{index + 1}</span>
                   <Avatar src={reg.userPhoto} name={reg.userName} size="sm" />
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
@@ -156,7 +156,7 @@ const EventAttendeesManager = ({ eventId, onClose }) => {
                         <Badge variant="info" size="sm">Admin</Badge>
                       )}
                     </div>
-                    <p className="text-xs text-zinc-400 truncate">{reg.userEmail}</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{reg.userEmail}</p>
                   </div>
                 </div>
 
@@ -227,7 +227,7 @@ const EventAttendeesManager = ({ eventId, onClose }) => {
                       <p className="font-medium text-zinc-900 dark:text-zinc-50 truncate">
                         {u.nombre || u.displayName || u.email}
                       </p>
-                      <p className="text-xs text-zinc-400 truncate">{u.email}</p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{u.email}</p>
                     </div>
                   </div>
 

@@ -54,7 +54,7 @@ const PlayerStats = ({ userId = null }) => {
             <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
               {stat.value}
             </p>
-            <p className="text-xs text-zinc-400">{stat.label}</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">{stat.label}</p>
           </Card>
         </motion.div>
       ))}

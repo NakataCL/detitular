@@ -163,7 +163,7 @@ const Sidebar = () => {
                 <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 truncate">
                   {userData?.nombre || user?.displayName}
                 </p>
-                <p className="text-xs text-zinc-400 truncate">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
                   {userData?.role === 'admin' ? 'Admin' : 'Jugador'}
                 </p>
               </div>

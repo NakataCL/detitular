@@ -158,7 +158,7 @@ const ExperienceForm = ({
             className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-colors ${
               mediaType === 'image'
                 ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700'
-                : 'border-zinc-200/60 dark:border-zinc-800 text-zinc-400'
+                : 'border-zinc-200/60 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400'
             }`}
           >
             <Image className="w-5 h-5" />
@@ -170,7 +170,7 @@ const ExperienceForm = ({
             className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-colors ${
               mediaType === 'video'
                 ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700'
-                : 'border-zinc-200/60 dark:border-zinc-800 text-zinc-400'
+                : 'border-zinc-200/60 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400'
             }`}
           >
             <Video className="w-5 h-5" />
@@ -229,10 +229,10 @@ const ExperienceForm = ({
                     }`}
                   >
                     <Upload className="w-10 h-10 text-zinc-400 mb-2" />
-                    <p className="text-sm text-zinc-400">
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
                       Haz clic para seleccionar o arrastra una imagen
                     </p>
-                    <p className="text-xs text-zinc-400 mt-1">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                       JPG, PNG, WebP, GIF (máx. 10MB)
                     </p>
                   </label>

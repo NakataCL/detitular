@@ -45,11 +45,11 @@ const EventCard = ({
             <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-50 break-words mb-2">
               {event.title}
             </h4>
-            <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+            <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
               <Clock className="w-3 h-3" />
               <span>{formatShortDate(event.date)}</span>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-zinc-400 mt-1">
+            <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 mt-1">
               <Users className="w-3 h-3" />
               <span>
                 {formatSlots(event)} cupos
@@ -139,7 +139,7 @@ const EventCard = ({
         {status === 'abierto' && (
           <div className="mb-5 py-3 px-4 bg-zinc-50 dark:bg-zinc-800 rounded-xl">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-zinc-400 uppercase tracking-wider font-medium">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-medium">
                 Comienza en
               </span>
               <Countdown.Inline targetDate={event.date} />

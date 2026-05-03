@@ -35,7 +35,7 @@ const EmptyState = ({
         {title}
       </h3>
 
-      <p className="text-sm text-zinc-400 text-center max-w-xs mb-6">
+      <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center max-w-xs mb-6">
         {description}
       </p>
 

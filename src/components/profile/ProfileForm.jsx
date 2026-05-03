@@ -115,7 +115,7 @@ const ProfileForm = ({ player, onSuccess = null }) => {
             className="hidden"
           />
         </div>
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
           Toca el ícono para cambiar tu foto
         </p>
       </Card>

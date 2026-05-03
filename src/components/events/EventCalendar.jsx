@@ -105,7 +105,7 @@ const EventCalendar = ({ events = [], isLoading = false, onDateSelect = null, on
         {DAYS_ES.map((day) => (
           <div
             key={day}
-            className="py-2 text-center text-xs font-medium text-zinc-400 dark:text-zinc-400"
+            className="py-2 text-center text-xs font-medium text-zinc-500 dark:text-zinc-400"
           >
             {day}
           </div>
@@ -172,7 +172,7 @@ const EventCalendar = ({ events = [], isLoading = false, onDateSelect = null, on
             className="border-t border-zinc-100 dark:border-zinc-800 overflow-hidden"
           >
             <div className="p-4 space-y-2">
-              <h3 className="text-sm font-medium text-zinc-400 dark:text-zinc-400">
+              <h3 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
                 Eventos del {selectedDate} de {MONTHS_ES[month]}
               </h3>
               {eventsByDay[selectedDate].map((event) => (
@@ -191,7 +191,7 @@ const EventCalendar = ({ events = [], isLoading = false, onDateSelect = null, on
                     </span>
                   </div>
                   {event.location && (
-                    <p className="text-xs text-zinc-400 mt-1 ml-4">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 ml-4">
                       {event.location}
                     </p>
                   )}

@@ -109,7 +109,7 @@ const AdminEventos = () => {
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
             Gestión de Eventos
           </h1>
-          <p className="text-zinc-400">Crea y administra los eventos de la academia</p>
+          <p className="text-zinc-500 dark:text-zinc-400">Crea y administra los eventos de la academia</p>
         </div>
         <Button icon={Plus} onClick={() => setShowForm(true)}>
           Nuevo Evento
@@ -256,7 +256,7 @@ const EventAdminCard = ({ event, onEdit, onDelete, onViewRegistrations, onView }
         <Users className="w-4 h-4" />
         <span className="font-bold">{formatSlots(event)}</span>
       </div>
-      <span className="text-xs text-zinc-400">inscritos</span>
+      <span className="text-xs text-zinc-500 dark:text-zinc-400">inscritos</span>
     </button>
   )
 
@@ -267,7 +267,7 @@ const EventAdminCard = ({ event, onEdit, onDelete, onViewRegistrations, onView }
     >
       <Users className="w-3.5 h-3.5 text-primary-600" />
       <span className="text-sm font-bold text-primary-600">{formatSlots(event)}</span>
-      <span className="text-xs text-zinc-400">inscritos</span>
+      <span className="text-xs text-zinc-500 dark:text-zinc-400">inscritos</span>
     </button>
   )
 
@@ -304,7 +304,7 @@ const EventAdminCard = ({ event, onEdit, onDelete, onViewRegistrations, onView }
             )}
           </div>
 
-          <div className="flex items-center gap-x-4 gap-y-1 mt-2 text-sm text-zinc-400 flex-wrap">
+          <div className="flex items-center gap-x-4 gap-y-1 mt-2 text-sm text-zinc-500 dark:text-zinc-400 flex-wrap">
             <span>{formatShortDate(event.date)}</span>
             <span className="break-words">{event.location || 'Sin ubicación'}</span>
           </div>

@@ -14,7 +14,7 @@ const Spinner = ({ size = 'md', className = '', fullScreen = false }) => {
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className={`${sizes.xl} text-zinc-900 dark:text-zinc-50 animate-spin`} />
-          <p className="text-sm text-zinc-400">Cargando...</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando...</p>
         </div>
       </div>
     )
@@ -30,7 +30,7 @@ const Spinner = ({ size = 'md', className = '', fullScreen = false }) => {
 Spinner.Container = ({ size = 'lg', text = 'Cargando...' }) => (
   <div className="flex flex-col items-center justify-center py-12 gap-3">
     <Loader2 className={`${sizes[size]} text-zinc-900 dark:text-zinc-50 animate-spin`} />
-    {text && <p className="text-sm text-zinc-400">{text}</p>}
+    {text && <p className="text-sm text-zinc-500 dark:text-zinc-400">{text}</p>}
   </div>
 )
 

@@ -50,7 +50,7 @@ const BottomNav = () => {
                 className={`flex flex-col items-center gap-0.5 ${
                   isActive
                     ? 'text-zinc-900 dark:text-zinc-50'
-                    : 'text-zinc-400 dark:text-zinc-500'
+                    : 'text-zinc-500 dark:text-zinc-400'
                 }`}
               >
                 <div className={`p-1 rounded-lg ${isActive ? 'bg-zinc-100 dark:bg-zinc-800' : ''}`}>

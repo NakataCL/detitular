@@ -14,7 +14,7 @@ const PlanCard = ({ plan, onSelectPlan = null }) => {
           <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
             Sin plan activo
           </h3>
-          <p className="text-sm text-zinc-400 mb-4">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
             Selecciona un plan para comenzar a inscribirte en eventos
           </p>
           {onSelectPlan && (
@@ -59,7 +59,7 @@ const PlanCard = ({ plan, onSelectPlan = null }) => {
         {/* Sesiones */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-zinc-400">Sesiones utilizadas</span>
+            <span className="text-sm text-zinc-500 dark:text-zinc-400">Sesiones utilizadas</span>
             <span className="font-semibold text-zinc-900 dark:text-zinc-50">
               {plan.sessionsUsed || 0} / {plan.totalSessions}
             </span>
@@ -76,7 +76,7 @@ const PlanCard = ({ plan, onSelectPlan = null }) => {
               }`}
             />
           </div>
-          <p className="text-sm text-zinc-400 mt-1">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
             {sessionsRemaining > 0
               ? `${sessionsRemaining} sesiones disponibles`
               : 'Sin sesiones disponibles'}
@@ -86,7 +86,7 @@ const PlanCard = ({ plan, onSelectPlan = null }) => {
         {/* Fecha de vencimiento */}
         <div className="flex items-center gap-2 text-sm">
           <Calendar className="w-4 h-4 text-zinc-400" />
-          <span className="text-zinc-400">
+          <span className="text-zinc-500 dark:text-zinc-400">
             Vence el {formatDate(plan.expiresAt, 'd MMM yyyy')}
           </span>
         </div>

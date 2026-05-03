@@ -49,7 +49,7 @@ const Input = forwardRef(({
       </div>
 
       {(error || helperText) && (
-        <p className={`mt-1.5 text-xs ${error ? 'text-red-500' : 'text-zinc-400'}`}>
+        <p className={`mt-1.5 text-xs ${error ? 'text-red-500' : 'text-zinc-500 dark:text-zinc-400'}`}>
           {error || helperText}
         </p>
       )}
@@ -99,7 +99,7 @@ export const Textarea = forwardRef(({
       />
 
       {(error || helperText) && (
-        <p className={`mt-1.5 text-xs ${error ? 'text-red-500' : 'text-zinc-400'}`}>
+        <p className={`mt-1.5 text-xs ${error ? 'text-red-500' : 'text-zinc-500 dark:text-zinc-400'}`}>
           {error || helperText}
         </p>
       )}
@@ -160,7 +160,7 @@ export const Select = forwardRef(({
       </select>
 
       {(error || helperText) && (
-        <p className={`mt-1.5 text-xs ${error ? 'text-red-500' : 'text-zinc-400'}`}>
+        <p className={`mt-1.5 text-xs ${error ? 'text-red-500' : 'text-zinc-500 dark:text-zinc-400'}`}>
           {error || helperText}
         </p>
       )}

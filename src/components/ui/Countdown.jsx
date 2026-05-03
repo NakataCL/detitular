@@ -22,7 +22,7 @@ const Countdown = ({ targetDate, onComplete = null, className = '' }) => {
   if (!timeLeft || timeLeft.expired) {
     return (
       <div className={`text-center ${className}`}>
-        <span className="text-zinc-400">Evento finalizado</span>
+        <span className="text-zinc-500 dark:text-zinc-400">Evento finalizado</span>
       </div>
     )
   }
@@ -48,7 +48,7 @@ const TimeUnit = ({ value, label }) => (
         {String(value).padStart(2, '0')}
       </span>
     </div>
-    <span className="text-xs text-zinc-400 mt-1">{label}</span>
+    <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{label}</span>
   </div>
 )
 
@@ -64,7 +64,7 @@ Countdown.Inline = ({ targetDate, className = '' }) => {
   }, [targetDate])
 
   if (!timeLeft || timeLeft.expired) {
-    return <span className={`text-zinc-400 ${className}`}>Finalizado</span>
+    return <span className={`text-zinc-500 dark:text-zinc-400 ${className}`}>Finalizado</span>
   }
 
   return (

@@ -16,6 +16,19 @@
   --color-accent-gold: #f59e0b;
   --color-accent-red: #ef4444;
   --color-accent-blue: #3b82f6;
+
+  /* Tipografía */
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-sans: 'Manrope', system-ui, sans-serif;
+
+  /* Acentos del dominio */
+  --color-pitch-50:  #ecfdf5;
+  --color-pitch-500: #10b981;
+  --color-pitch-700: #047857;
+
+  /* Texto / superficies recalibrados a AA */
+  --color-muted: #71717a;
+  --color-muted-dark: #a1a1aa;
 }
 
 /* Base reset - using @layer base so it doesn't override Tailwind utilities */
@@ -34,7 +47,8 @@
   }
 
   body {
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--font-sans);
+    font-feature-settings: 'ss01', 'cv11';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-color: #fafafa;
@@ -127,6 +141,12 @@
 @keyframes skeleton-loading {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+/* Display font */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
 }
 
 /* Safe area */

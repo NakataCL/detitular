@@ -38,7 +38,7 @@ const InstallPrompt = () => {
               <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-0.5">
                 Instala la App
               </h4>
-              <p className="text-xs text-zinc-400 mb-3">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-3">
                 Accede más rápido y recibe notificaciones
               </p>
 

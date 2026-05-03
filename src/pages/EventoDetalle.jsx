@@ -63,7 +63,7 @@ const EventoDetalle = () => {
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
           Evento no encontrado
         </h2>
-        <p className="text-sm text-zinc-400 mb-4">
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
           El evento que buscas no existe o ha sido eliminado
         </p>
         <button

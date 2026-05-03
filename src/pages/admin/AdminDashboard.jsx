@@ -51,7 +51,7 @@ const AdminDashboard = () => {
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
             Panel de Administración
           </h1>
-          <p className="text-zinc-400">Gestiona tu academia de fútbol</p>
+          <p className="text-zinc-500 dark:text-zinc-400">Gestiona tu academia de fútbol</p>
         </div>
       </div>
 
@@ -105,7 +105,7 @@ const AdminDashboard = () => {
                     <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
                       {action.title}
                     </h3>
-                    <p className="text-sm text-zinc-400">{action.description}</p>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">{action.description}</p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-zinc-400" />
                 </div>
@@ -144,7 +144,7 @@ const AdminDashboard = () => {
                 <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
                   {nextEvent.title}
                 </h3>
-                <p className="text-sm text-zinc-400">
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
                   {formatShortDate(nextEvent.date)} • {nextEvent.currentSlots}/{nextEvent.maxSlots} inscritos
                 </p>
               </div>
@@ -160,7 +160,7 @@ const AdminDashboard = () => {
         ) : (
           <Card className="text-center py-8">
             <Calendar className="w-12 h-12 text-zinc-300 mx-auto mb-2" />
-            <p className="text-zinc-400 mb-4">No hay eventos próximos</p>
+            <p className="text-zinc-500 dark:text-zinc-400 mb-4">No hay eventos próximos</p>
             <Button onClick={() => navigate('/admin/eventos')} icon={Plus}>
               Crear evento
             </Button>
@@ -179,7 +179,7 @@ const AdminDashboard = () => {
               <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
                 Gestión de Eventos
               </h3>
-              <p className="text-sm text-zinc-400">
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
                 Crear, editar y ver inscritos
               </p>
             </div>
@@ -196,7 +196,7 @@ const AdminDashboard = () => {
               <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
                 Gestión de Usuarios
               </h3>
-              <p className="text-sm text-zinc-400">
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
                 Planes, roles y perfiles
               </p>
             </div>
@@ -225,7 +225,7 @@ const StatCard = ({ title, value, icon: Icon, color }) => {
         </div>
         <div>
           <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{value}</p>
-          <p className="text-xs text-zinc-400">{title}</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">{title}</p>
         </div>
       </div>
     </Card>

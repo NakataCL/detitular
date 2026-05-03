@@ -112,12 +112,12 @@ const Home = () => {
                 <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-1">
                   {nextEvent.title}
                 </h3>
-                <p className="text-sm text-zinc-400 mb-6">
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
                   {formatShortDate(nextEvent.date)}
                 </p>
 
                 <div className="mb-6 p-4 bg-zinc-50 dark:bg-zinc-800 rounded-xl">
-                  <p className="text-xs text-zinc-400 uppercase tracking-widest mb-3 text-center font-medium">
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-3 text-center font-medium">
                     Comienza en
                   </p>
                   <Countdown targetDate={nextEvent.date} />
@@ -136,7 +136,7 @@ const Home = () => {
             ) : (
               <div className="text-center py-10">
                 <Calendar className="w-10 h-10 text-zinc-300 dark:text-zinc-700 mx-auto mb-3" />
-                <p className="text-sm text-zinc-400">No hay eventos próximos</p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">No hay eventos próximos</p>
               </div>
             )}
           </Card>
@@ -179,7 +179,7 @@ const Home = () => {
           ) : (
             <Card className="text-center py-10">
               <Calendar className="w-10 h-10 text-zinc-300 dark:text-zinc-700 mx-auto mb-3" />
-              <p className="text-sm text-zinc-400">No hay eventos disponibles</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">No hay eventos disponibles</p>
             </Card>
           )}
         </motion.section>
@@ -198,7 +198,7 @@ const Home = () => {
               <h3 className="text-xl font-semibold text-white mb-2">
                 ¿Listo para jugar?
               </h3>
-              <p className="text-sm text-zinc-400 mb-6 max-w-md">
+              <p className="text-sm text-zinc-300 mb-6 max-w-md">
                 Únete a la academia y empieza a inscribirte en eventos
               </p>
               <Button
@@ -222,7 +222,7 @@ const StatCard = ({ icon: Icon, label, value }) => (
       <div className="p-2 rounded-xl bg-zinc-100 dark:bg-zinc-800">
         <Icon className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
       </div>
-      <span className="text-xs text-zinc-400 font-medium">{label}</span>
+      <span className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">{label}</span>
     </div>
     <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">{value}</p>
   </div>

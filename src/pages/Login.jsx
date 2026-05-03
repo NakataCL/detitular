@@ -54,7 +54,7 @@ const Login = () => {
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight mb-1.5">
             {APP_NAME}
           </h1>
-          <p className="text-sm text-zinc-400">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Gestiona tu experiencia futbolística
           </p>
         </div>
@@ -93,7 +93,7 @@ const Login = () => {
             <span>Continuar con Google</span>
           </Button>
 
-          <p className="text-xs text-zinc-400 text-center mt-8">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center mt-8">
             Al continuar, aceptas nuestros términos de servicio y política de privacidad
           </p>
         </Card>
@@ -102,7 +102,7 @@ const Login = () => {
         <div className="text-center mt-8">
           <button
             onClick={() => navigate('/')}
-            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 text-sm transition-colors"
+            className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 text-sm transition-colors"
           >
             ← Volver al inicio
           </button>
