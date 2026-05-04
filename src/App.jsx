@@ -11,6 +11,7 @@ import Eventos from './pages/Eventos'
 import EventoDetalle from './pages/EventoDetalle'
 import Registros from './pages/Registros'
 import Experiencias from './pages/Experiencias'
+import AlbumDetalle from './pages/AlbumDetalle'
 import Perfil from './pages/Perfil'
 import Login from './pages/Login'
 import { AdminDashboard, AdminEventos, AdminUsuarios } from './pages/admin'
@@ -42,6 +43,7 @@ function App() {
               <Route path="/eventos" element={<Eventos />} />
               <Route path="/eventos/:id" element={<EventoDetalle />} />
               <Route path="/experiencias" element={<Experiencias />} />
+              <Route path="/experiencias/:albumId" element={<AlbumDetalle />} />
 
               {/* Rutas protegidas (requieren autenticación) */}
               <Route
