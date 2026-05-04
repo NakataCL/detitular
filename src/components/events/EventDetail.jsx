@@ -8,7 +8,9 @@ import {
   CalendarPlus,
   ArrowLeft,
   Lock,
-  Clock
+  Clock,
+  Image as ImageIcon,
+  ArrowRight
 } from '../../utils/icons'
 import { useNavigate } from 'react-router-dom'
 import { Card, Badge, Button, Countdown, Avatar } from '../ui'
@@ -21,6 +23,10 @@ import {
   useJoinWaitlist,
   useLeaveWaitlist
 } from '../../hooks/useWaitlist'
+import { useAlbums } from '../../hooks/useAlbums'
+import { AlbumCreateModal } from '../experiences'
+import { useState } from 'react'
+import { Plus } from '../../utils/icons'
 import toast from 'react-hot-toast'
 
 const EventDetail = ({
@@ -33,7 +39,10 @@ const EventDetail = ({
   isCanceling = false
 }) => {
   const navigate = useNavigate()
-  const { isAuthenticated, login } = useAuth()
+  const { isAuthenticated, login, isAdmin } = useAuth()
+  const { data: linkedAlbums = [] } = useAlbums({ eventId: event?.id })
+  const linkedAlbum = linkedAlbums[0] || null
+  const [createAlbumOpen, setCreateAlbumOpen] = useState(false)
 
   const eventType = EVENT_TYPES[event.type] || EVENT_TYPES.otro
   const status = getEventStatus(event, userRegistration)
@@ -192,6 +201,63 @@ const EventDetail = ({
           </Card>
         )}
 
+        {/* Galería del evento */}
+        {linkedAlbum && (
+          <Card hover onClick={() => navigate(`/experiencias/${linkedAlbum.id}`)} className="cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-xl bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex-shrink-0">
+                {linkedAlbum.coverUrl || linkedAlbum.previewUrls?.[0] ? (
+                  <img
+                    src={linkedAlbum.coverUrl || linkedAlbum.previewUrls[0]}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-zinc-400">
+                    <ImageIcon className="w-5 h-5" />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 truncate">
+                  Galería del evento
+                </h3>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {linkedAlbum.itemCount || 0} {linkedAlbum.itemCount === 1 ? 'foto' : 'fotos'}
+                </p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-zinc-400" />
+            </div>
+          </Card>
+        )}
+
+        {/* Sugerencia para admin: crear álbum si aún no hay */}
+        {isAdmin && !linkedAlbum && (
+          <Card>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center flex-shrink-0">
+                <ImageIcon className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                  Crear álbum vacío para este evento
+                </h3>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Después podrás subir fotos vinculadas al evento.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                icon={Plus}
+                onClick={() => setCreateAlbumOpen(true)}
+              >
+                Crear
+              </Button>
+            </div>
+          </Card>
+        )}
+
         {/* Quick actions */}
         <div className="flex gap-2">
           <Button
@@ -277,6 +343,19 @@ const EventDetail = ({
             </Button>
           )}
         </Card>
+
+        {/* Modal de creación de álbum precargado con datos del evento */}
+        <AlbumCreateModal
+          isOpen={createAlbumOpen}
+          onClose={() => setCreateAlbumOpen(false)}
+          album={{
+            title: event.title,
+            category: event.type,
+            date: event.date,
+            eventId: event.id,
+            isPublic: !event.isPrivate
+          }}
+        />
 
         {/* Attendees */}
         {registrations.length > 0 && (

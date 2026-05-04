@@ -25,6 +25,7 @@ import {
   useAlbumExperiences,
   useUnclassifiedExperiences
 } from '../hooks/useAlbums'
+import { useEvent } from '../hooks/useEvents'
 import { useAuth } from '../context/AuthContext'
 import {
   EXPERIENCE_CATEGORIES,
@@ -42,6 +43,8 @@ const AlbumDetalle = () => {
   const albumQuery = useAlbum(albumId)
   const experiencesQuery = useAlbumExperiences(albumId)
   const unclassifiedQuery = useUnclassifiedExperiences()
+  const linkedEventId = !isUnclassified ? albumQuery.data?.eventId : null
+  const { data: linkedEvent } = useEvent(linkedEventId)
 
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
@@ -182,9 +185,11 @@ const AlbumDetalle = () => {
             <button
               type="button"
               onClick={() => navigate(`/eventos/${album.eventId}`)}
-              className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+              className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
             >
-              Vinculado al evento →
+              {linkedEvent?.title
+                ? `Vinculado a ${linkedEvent.title} →`
+                : 'Vinculado al evento →'}
             </button>
           )}
 
