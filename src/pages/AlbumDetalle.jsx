@@ -11,8 +11,12 @@ import {
   Plus,
   Edit2,
   Check,
-  X
+  X,
+  Share2,
+  Download
 } from '../utils/icons'
+import { shareAlbum } from '../utils/share'
+import { downloadAlbumZip } from '../utils/zip'
 import { Button, Skeleton, EmptyState, Badge } from '../components/ui'
 import {
   Lightbox,
@@ -53,6 +57,7 @@ const AlbumDetalle = () => {
   const [moveSheetOpen, setMoveSheetOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [uploaderOpen, setUploaderOpen] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
   // El álbum virtual "Sin clasificar" no tiene doc Firestore; sintetizamos uno.
   const album = isUnclassified
@@ -194,6 +199,36 @@ const AlbumDetalle = () => {
           )}
 
           <div className="flex-1" />
+
+          {!isUnclassified && album.isPublic && (
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={Share2}
+              onClick={() => shareAlbum(album)}
+            >
+              Compartir
+            </Button>
+          )}
+
+          {isAdmin && !isUnclassified && experiences.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={Download}
+              loading={downloading}
+              onClick={async () => {
+                setDownloading(true)
+                try {
+                  await downloadAlbumZip(album, experiences)
+                } finally {
+                  setDownloading(false)
+                }
+              }}
+            >
+              Descargar
+            </Button>
+          )}
 
           {isAdmin && !isUnclassified && (
             <>
