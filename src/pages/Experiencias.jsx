@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Image as ImageIcon } from '../utils/icons'
 import { Button, Skeleton, EmptyState } from '../components/ui'
-import { AlbumCard } from '../components/experiences'
+import { AlbumCard, AlbumCreateModal } from '../components/experiences'
 import { useAlbums, useUnclassifiedExperiences } from '../hooks/useAlbums'
 import { useAuth } from '../context/AuthContext'
 import { EXPERIENCE_CATEGORIES, UNCLASSIFIED_ALBUM_ID } from '../utils/constants'
@@ -17,6 +17,7 @@ const Experiencias = () => {
 
   const [category, setCategory] = useState(ALL)
   const [year, setYear] = useState(null)
+  const [createOpen, setCreateOpen] = useState(false)
 
   const { data: albums, isLoading } = useAlbums({
     category: category === ALL ? null : category,
@@ -60,8 +61,7 @@ const Experiencias = () => {
           <Button
             icon={Plus}
             size="sm"
-            onClick={() => navigate('/admin')}
-            title="La creación de álbumes se conectará en T05"
+            onClick={() => setCreateOpen(true)}
           >
             Álbum
           </Button>
@@ -130,6 +130,11 @@ const Experiencias = () => {
           ))}
         </motion.div>
       )}
+
+      <AlbumCreateModal
+        isOpen={createOpen}
+        onClose={() => setCreateOpen(false)}
+      />
     </div>
   )
 }
