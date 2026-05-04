@@ -11,7 +11,8 @@ const Lightbox = ({
   onClose,
   images = [],
   currentIndex = 0,
-  onIndexChange = null
+  onIndexChange = null,
+  albumTitle = null
 }) => {
   const [index, setIndex] = useState(currentIndex)
   const [zoom, setZoom] = useState(1)
@@ -105,8 +106,11 @@ const Lightbox = ({
         >
           {/* Toolbar */}
           <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10">
-            <div className="text-white">
-              <span className="text-sm opacity-75">
+            <div className="text-white min-w-0 mr-3">
+              {albumTitle && (
+                <p className="text-sm font-medium truncate">{albumTitle}</p>
+              )}
+              <span className="text-xs opacity-75">
                 {index + 1} / {images.length}
               </span>
             </div>
