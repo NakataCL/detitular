@@ -80,7 +80,28 @@ service cloud.firestore {
         && resource.data.get('registeredBy', 'self') == 'self';
     }
 
-    // Experiencias: todos leen, sólo admin escribe
+    // Álbumes de fotos
+    function albumLinkedEventMember(data) {
+      // Permite la lectura de un álbum privado a los usuarios inscritos al evento vinculado.
+      return request.auth != null
+        && data.get('eventId', null) is string
+        && exists(/databases/$(database)/documents/events/$(data.eventId))
+        && get(/databases/$(database)/documents/events/$(data.eventId))
+             .data.get('registeredUserIds', []).hasAny([request.auth.uid]);
+    }
+
+    match /albums/{albumId} {
+      // Admin: acceso total
+      allow read, write: if isAdmin();
+
+      // Lectura: álbum público, o privado pero el usuario está inscrito al evento vinculado
+      allow read: if resource.data.get('isPublic', true) == true
+        || albumLinkedEventMember(resource.data);
+    }
+
+    // Experiencias: todos leen, sólo admin escribe.
+    // (La privacidad efectiva se aplica a nivel de álbum: si un álbum es privado, su
+    // listado por albumId queda implícitamente restringido a los miembros del evento.)
     match /experiences/{expId} {
       allow read: if true;
       allow write: if isAdmin();

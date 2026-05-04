@@ -23,7 +23,7 @@ const ExperienceForm = ({
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: 'partidos',
+    category: 'partido',
     videoUrl: ''
   })
   const [selectedFile, setSelectedFile] = useState(null)
@@ -35,7 +35,7 @@ const ExperienceForm = ({
     setFormData({
       title: '',
       description: '',
-      category: 'partidos',
+      category: 'partido',
       videoUrl: ''
     })
     setSelectedFile(null)

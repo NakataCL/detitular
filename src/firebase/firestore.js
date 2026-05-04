@@ -505,19 +505,49 @@ export const markAttendance = async (registrationId, attended) => {
 // ============================================
 
 /**
- * Crea una nueva experiencia
+ * Crea una experiencia. Si experienceData.albumId está presente, actualiza
+ * atómicamente itemCount y previewUrls del álbum (max 4 URLs en preview).
  */
 export const createExperience = async (experienceData, createdBy) => {
-  const experiencesRef = collection(db, 'experiences')
-  const newExperience = {
+  const albumId = experienceData?.albumId || null
+  const expRef = doc(collection(db, 'experiences'))
+  const payload = {
     ...experienceData,
+    albumId,
     createdBy,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   }
 
-  const docRef = await addDoc(experiencesRef, newExperience)
-  return { id: docRef.id, ...newExperience }
+  if (!albumId) {
+    await setDoc(expRef, payload)
+    return { id: expRef.id, ...payload }
+  }
+
+  const albumRef = doc(db, 'albums', albumId)
+  await runTransaction(db, async (tx) => {
+    const albumSnap = await tx.get(albumRef)
+    if (!albumSnap.exists()) throw new Error('El álbum ya no existe')
+
+    const album = albumSnap.data()
+    const previewUrls = Array.isArray(album.previewUrls) ? album.previewUrls : []
+    const albumUpdates = {
+      itemCount: increment(1),
+      updatedAt: serverTimestamp()
+    }
+    if (
+      previewUrls.length < 4 &&
+      payload.mediaUrl &&
+      !previewUrls.includes(payload.mediaUrl)
+    ) {
+      albumUpdates.previewUrls = arrayUnion(payload.mediaUrl)
+    }
+
+    tx.set(expRef, payload)
+    tx.update(albumRef, albumUpdates)
+  })
+
+  return { id: expRef.id, ...payload }
 }
 
 /**
@@ -567,11 +597,257 @@ export const getExperiencesPaginated = async (pageSize = 12, lastDoc = null, cat
 }
 
 /**
- * Elimina una experiencia
+ * Elimina una experiencia. Si tenía albumId, decrementa itemCount del álbum
+ * y, si su URL estaba en previewUrls, la quita atómicamente.
  */
 export const deleteExperience = async (experienceId) => {
   const experienceRef = doc(db, 'experiences', experienceId)
-  await deleteDoc(experienceRef)
+
+  const expSnap = await getDoc(experienceRef)
+  if (!expSnap.exists()) return
+  const exp = expSnap.data()
+  const albumId = exp.albumId || null
+
+  if (!albumId) {
+    await deleteDoc(experienceRef)
+    return
+  }
+
+  const albumRef = doc(db, 'albums', albumId)
+  await runTransaction(db, async (tx) => {
+    const albumSnap = await tx.get(albumRef)
+    tx.delete(experienceRef)
+    if (!albumSnap.exists()) return
+
+    const album = albumSnap.data()
+    const previewUrls = Array.isArray(album.previewUrls) ? album.previewUrls : []
+    const albumUpdates = {
+      itemCount: increment(-1),
+      updatedAt: serverTimestamp()
+    }
+    if (exp.mediaUrl && previewUrls.includes(exp.mediaUrl)) {
+      albumUpdates.previewUrls = arrayRemove(exp.mediaUrl)
+    }
+    tx.update(albumRef, albumUpdates)
+  })
+}
+
+// ============================================
+// ÁLBUMES
+// ============================================
+
+/**
+ * Crea un nuevo álbum.
+ */
+export const createAlbum = async (albumData, createdBy) => {
+  const albumsRef = collection(db, 'albums')
+  const newAlbum = {
+    title: albumData.title,
+    description: albumData.description || '',
+    category: albumData.category,
+    eventId: albumData.eventId || null,
+    date: albumData.date || serverTimestamp(),
+    coverPhotoId: null,
+    coverUrl: null,
+    previewUrls: [],
+    itemCount: 0,
+    isPublic: albumData.isPublic !== false,
+    createdBy,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  }
+  const docRef = await addDoc(albumsRef, newAlbum)
+  return { id: docRef.id, ...newAlbum }
+}
+
+/**
+ * Obtiene álbumes filtrados. Filtros opcionales: category, year, eventId, max.
+ */
+export const getAlbums = async ({ category = null, year = null, eventId = null, max = null } = {}) => {
+  const albumsRef = collection(db, 'albums')
+  const constraints = []
+
+  if (category) constraints.push(where('category', '==', category))
+  if (eventId) constraints.push(where('eventId', '==', eventId))
+  if (year) {
+    const start = new Date(year, 0, 1)
+    const end = new Date(year, 11, 31, 23, 59, 59)
+    constraints.push(where('date', '>=', Timestamp.fromDate(start)))
+    constraints.push(where('date', '<=', Timestamp.fromDate(end)))
+  }
+  constraints.push(orderBy('date', 'desc'))
+  if (max) constraints.push(limit(max))
+
+  const q = query(albumsRef, ...constraints)
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
+}
+
+/**
+ * Obtiene un álbum por ID.
+ */
+export const getAlbumById = async (albumId) => {
+  const ref = doc(db, 'albums', albumId)
+  const snap = await getDoc(ref)
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null
+}
+
+/**
+ * Lista experiencias asociadas a un álbum, ordenadas por createdAt desc.
+ */
+export const getAlbumExperiences = async (albumId, max = null) => {
+  const experiencesRef = collection(db, 'experiences')
+  const constraints = [
+    where('albumId', '==', albumId),
+    orderBy('createdAt', 'desc')
+  ]
+  if (max) constraints.push(limit(max))
+  const q = query(experiencesRef, ...constraints)
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
+}
+
+/**
+ * Lista experiencias sin álbum (campo albumId == null). Solo accesible a admin
+ * a nivel de UI; las reglas son públicas para experiences.
+ */
+export const getUnclassifiedExperiences = async (max = null) => {
+  const experiencesRef = collection(db, 'experiences')
+  const constraints = [
+    where('albumId', '==', null),
+    orderBy('createdAt', 'desc')
+  ]
+  if (max) constraints.push(limit(max))
+  const q = query(experiencesRef, ...constraints)
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
+}
+
+/**
+ * Actualiza campos de un álbum.
+ */
+export const updateAlbum = async (albumId, updates) => {
+  const ref = doc(db, 'albums', albumId)
+  await updateDoc(ref, {
+    ...updates,
+    updatedAt: serverTimestamp()
+  })
+}
+
+/**
+ * Define la portada del álbum tomando la URL de una experiencia hermana.
+ */
+export const setAlbumCover = async (albumId, experienceId) => {
+  const expSnap = await getDoc(doc(db, 'experiences', experienceId))
+  if (!expSnap.exists()) throw new Error('Foto no encontrada')
+  const exp = expSnap.data()
+  if (exp.albumId !== albumId) throw new Error('La foto no pertenece a este álbum')
+  await updateAlbum(albumId, {
+    coverPhotoId: experienceId,
+    coverUrl: exp.mediaUrl || null
+  })
+}
+
+/**
+ * Elimina un álbum y todas sus experiencias asociadas. Procesa en lotes de 400
+ * para no superar el límite de operaciones por batch.
+ */
+export const deleteAlbum = async (albumId) => {
+  const experiencesRef = collection(db, 'experiences')
+  const q = query(experiencesRef, where('albumId', '==', albumId))
+  const snapshot = await getDocs(q)
+
+  let batch = writeBatch(db)
+  let opsInBatch = 0
+  const BATCH_LIMIT = 400
+
+  for (const expDoc of snapshot.docs) {
+    batch.delete(expDoc.ref)
+    opsInBatch++
+    if (opsInBatch >= BATCH_LIMIT) {
+      await batch.commit()
+      batch = writeBatch(db)
+      opsInBatch = 0
+    }
+  }
+
+  batch.delete(doc(db, 'albums', albumId))
+  opsInBatch++
+  await batch.commit()
+}
+
+/**
+ * Mueve un set de experiencias a un álbum destino. Si targetAlbumId es null
+ * convierte en "sin clasificar". Recalcula itemCount y previewUrls de los
+ * álbumes implicados al final.
+ */
+export const moveExperiencesToAlbum = async (experienceIds, targetAlbumId) => {
+  if (!Array.isArray(experienceIds) || experienceIds.length === 0) return
+
+  // 1. Leer experiencias para conocer su albumId actual
+  const expRefs = experienceIds.map(id => doc(db, 'experiences', id))
+  const expSnaps = await Promise.all(expRefs.map(r => getDoc(r)))
+  const experiences = expSnaps
+    .map((snap, i) => snap.exists() ? { id: experienceIds[i], ref: expRefs[i], ...snap.data() } : null)
+    .filter(Boolean)
+
+  // 2. Batch update de albumId en cada experiencia
+  let batch = writeBatch(db)
+  let opsInBatch = 0
+  const BATCH_LIMIT = 400
+
+  for (const exp of experiences) {
+    batch.update(exp.ref, {
+      albumId: targetAlbumId || null,
+      updatedAt: serverTimestamp()
+    })
+    opsInBatch++
+    if (opsInBatch >= BATCH_LIMIT) {
+      await batch.commit()
+      batch = writeBatch(db)
+      opsInBatch = 0
+    }
+  }
+  if (opsInBatch > 0) await batch.commit()
+
+  // 3. Recalcular itemCount/previewUrls de los álbumes afectados
+  const affectedAlbumIds = new Set()
+  experiences.forEach(e => {
+    if (e.albumId) affectedAlbumIds.add(e.albumId)
+  })
+  if (targetAlbumId) affectedAlbumIds.add(targetAlbumId)
+
+  await Promise.all(
+    [...affectedAlbumIds].map(id => rebuildAlbumDenormalized(id))
+  )
+}
+
+/**
+ * Recalcula itemCount y previewUrls de un álbum a partir del estado actual de
+ * sus experiencias. Útil tras moves o cualquier operación que afecte el set.
+ */
+export const rebuildAlbumDenormalized = async (albumId) => {
+  const experiencesRef = collection(db, 'experiences')
+  const totalQ = query(experiencesRef, where('albumId', '==', albumId))
+  const totalSnap = await getDocs(totalQ)
+  const itemCount = totalSnap.size
+
+  const previewQ = query(
+    experiencesRef,
+    where('albumId', '==', albumId),
+    orderBy('createdAt', 'desc'),
+    limit(4)
+  )
+  const previewSnap = await getDocs(previewQ)
+  const previewUrls = previewSnap.docs
+    .map(d => d.data().mediaUrl)
+    .filter(Boolean)
+
+  await updateDoc(doc(db, 'albums', albumId), {
+    itemCount,
+    previewUrls,
+    updatedAt: serverTimestamp()
+  })
 }
 
 // ============================================
@@ -827,6 +1103,62 @@ export const migrateLegacyEvents = async () => {
 
   if (opsInBatch > 0) await batch.commit()
 
+  return { migrated, skipped }
+}
+
+/**
+ * Migración one-shot para experiencias legacy:
+ *  - Asegura que todas tengan el campo `albumId` (default null) para que la
+ *    query `where('albumId','==',null)` las indexe.
+ *  - Normaliza categorías plurales antiguas a singulares
+ *    ('partidos' → 'partido', 'highlights' → 'otro', ...).
+ * Devuelve { migrated, skipped }.
+ */
+export const migrateLegacyExperiences = async () => {
+  const LEGACY_CATEGORY_MAP = {
+    partidos: 'partido',
+    torneos: 'torneo',
+    entrenamientos: 'entrenamiento',
+    highlights: 'otro'
+  }
+
+  const experiencesRef = collection(db, 'experiences')
+  const snapshot = await getDocs(experiencesRef)
+
+  let migrated = 0
+  let skipped = 0
+  const BATCH_LIMIT = 400
+
+  let batch = writeBatch(db)
+  let opsInBatch = 0
+
+  for (const expDoc of snapshot.docs) {
+    const data = expDoc.data()
+    const needsAlbumId = data.albumId === undefined
+    const newCategory = LEGACY_CATEGORY_MAP[data.category]
+    const needsCategory = !!newCategory
+
+    if (!needsAlbumId && !needsCategory) {
+      skipped++
+      continue
+    }
+
+    batch.update(expDoc.ref, {
+      ...(needsAlbumId ? { albumId: null } : {}),
+      ...(needsCategory ? { category: newCategory } : {}),
+      updatedAt: serverTimestamp()
+    })
+    opsInBatch++
+    migrated++
+
+    if (opsInBatch >= BATCH_LIMIT) {
+      await batch.commit()
+      batch = writeBatch(db)
+      opsInBatch = 0
+    }
+  }
+
+  if (opsInBatch > 0) await batch.commit()
   return { migrated, skipped }
 }
 

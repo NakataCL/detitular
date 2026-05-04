@@ -1,4 +1,5 @@
 // Dashboard de administración
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -10,15 +11,33 @@ import {
   ArrowRight,
   Plus
 } from '../../utils/icons'
-import { Card, Button, Skeleton } from '../../components/ui'
+import { Card, Button, Skeleton, ConfirmModal } from '../../components/ui'
 import { useStats } from '../../hooks/useStats'
 import { useNextEvent } from '../../hooks/useEvents'
 import { formatShortDate } from '../../utils/helpers'
+import { migrateLegacyExperiences } from '../../firebase/firestore'
+import toast from 'react-hot-toast'
 
 const AdminDashboard = () => {
   const navigate = useNavigate()
   const { data: stats, isLoading: loadingStats } = useStats()
   const { data: nextEvent, isLoading: loadingEvent } = useNextEvent()
+  const [confirmingMigrate, setConfirmingMigrate] = useState(false)
+  const [migrating, setMigrating] = useState(false)
+
+  const performGalleryMigration = async () => {
+    setMigrating(true)
+    try {
+      const { migrated, skipped } = await migrateLegacyExperiences()
+      toast.success(`Galería migrada: ${migrated} actualizadas, ${skipped} ya estaban al día`)
+    } catch (e) {
+      toast.error('No se pudo completar la migración')
+      console.error(e)
+    } finally {
+      setMigrating(false)
+      setConfirmingMigrate(false)
+    }
+  }
 
   const quickActions = [
     {
@@ -167,6 +186,46 @@ const AdminDashboard = () => {
           </Card>
         )}
       </div>
+
+      {/* Mantenimiento: migración one-shot de galería legacy */}
+      <div>
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3">
+          Mantenimiento
+        </h2>
+        <Card>
+          <div className="flex items-start gap-4">
+            <div className="flex-1">
+              <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
+                Migrar galería legacy
+              </h3>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                Asigna <code>albumId: null</code> a las experiencias antiguas y normaliza categorías. Solo es necesario ejecutarlo una vez tras desplegar la nueva galería.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmingMigrate(true)}
+              loading={migrating}
+            >
+              Ejecutar
+            </Button>
+          </div>
+        </Card>
+      </div>
+
+      <ConfirmModal
+        isOpen={confirmingMigrate}
+        onClose={() => setConfirmingMigrate(false)}
+        onConfirm={performGalleryMigration}
+        title="Migrar galería legacy"
+        confirmLabel="Migrar"
+        loading={migrating}
+      >
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          Se actualizarán todas las experiencias que aún no tengan el campo <code>albumId</code> o que usen categorías antiguas (partidos, torneos, entrenamientos, highlights).
+        </p>
+      </ConfirmModal>
 
       {/* Secciones de administración */}
       <div className="grid md:grid-cols-2 gap-4">

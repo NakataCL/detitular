@@ -118,14 +118,33 @@ export const FOOT_OPTIONS = [
   { value: 'ambidiestro', label: 'Ambidiestro' }
 ]
 
-// Categorías de experiencias
+// Categorías de experiencias / álbumes (singular, alineadas con EVENT_TYPES)
 export const EXPERIENCE_CATEGORIES = [
-  { value: 'all', label: 'Todas' },
-  { value: 'partidos', label: 'Partidos' },
-  { value: 'entrenamientos', label: 'Entrenamientos' },
-  { value: 'torneos', label: 'Torneos' },
-  { value: 'highlights', label: 'Highlights' }
+  { value: 'partido', label: 'Partidos' },
+  { value: 'torneo', label: 'Torneos' },
+  { value: 'entrenamiento', label: 'Entrenamientos' },
+  { value: 'otro', label: 'Otros' }
 ]
+
+// Centinela usado en la URL para listar las experiencias sin álbum (solo admin)
+export const UNCLASSIFIED_ALBUM_ID = '__unclassified__'
+
+// Gradientes Tailwind por categoría — usados en portadas de álbum sin foto
+// y en el hero del detalle. Mantener sincronizado con EXPERIENCE_CATEGORIES.
+export const ALBUM_GRADIENTS = {
+  partido: 'from-red-700 to-red-900',
+  torneo: 'from-amber-600 to-amber-800',
+  entrenamiento: 'from-blue-700 to-blue-900',
+  otro: 'from-violet-700 to-violet-900'
+}
+
+// Mapa para migrar valores legacy ('partidos', 'highlights', etc.) → nuevos
+export const LEGACY_CATEGORY_MAP = {
+  partidos: 'partido',
+  torneos: 'torneo',
+  entrenamientos: 'entrenamiento',
+  highlights: 'otro'
+}
 
 // Rutas de navegación
 export const NAV_ITEMS = [
