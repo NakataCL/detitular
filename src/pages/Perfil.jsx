@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext'
 import { usePlayer } from '../hooks/usePlayer'
 import { useEventReminders } from '../hooks/useEventReminders'
 import { POSITIONS, FOOT_OPTIONS } from '../utils/constants'
-import { formatPhone, userContact } from '../utils/helpers'
+import { formatPhone } from '../utils/helpers'
 import toast from 'react-hot-toast'
 
 const Perfil = () => {
@@ -54,9 +54,6 @@ const Perfil = () => {
         >
           <Edit2 className="w-4 h-4" />
         </Button>
-        <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400 text-center">
-          {userContact(player) || user?.email}
-        </p>
       </div>
 
       {/* Plan */}
