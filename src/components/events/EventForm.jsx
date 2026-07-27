@@ -4,26 +4,10 @@ import { motion } from 'framer-motion'
 import { Calendar, MapPin, Users, FileText, Clock, Lock } from '../../utils/icons'
 import { Button, Card, Modal } from '../ui'
 import Input, { Textarea, Select } from '../ui/Input'
-import {
-  EVENT_TYPES,
-  SELECTION_MODES,
-  ATTENDANCE_WINDOWS,
-  DEFAULT_SELECTION_MODE,
-  DEFAULT_ATTENDANCE_WINDOW
-} from '../../utils/constants'
+import { EVENT_TYPES, GOALKEEPER_SLOTS } from '../../utils/constants'
 import { format } from 'date-fns'
 
 const eventTypeOptions = Object.entries(EVENT_TYPES).map(([value, { label }]) => ({
-  value,
-  label
-}))
-
-const selectionModeOptions = Object.entries(SELECTION_MODES).map(([value, { label }]) => ({
-  value,
-  label
-}))
-
-const attendanceWindowOptions = Object.entries(ATTENDANCE_WINDOWS).map(([value, { label }]) => ({
   value,
   label
 }))
@@ -40,13 +24,11 @@ const EventForm = ({
     type: 'partido',
     date: '',
     time: '',
-    maxSlots: 16,
+    maxSlots: 20,
     location: '',
     description: '',
     instructions: '',
-    isPrivate: false,
-    selectionMode: DEFAULT_SELECTION_MODE,
-    attendanceWindow: DEFAULT_ATTENDANCE_WINDOW
+    isPrivate: false
   })
   const [errors, setErrors] = useState({})
 
@@ -62,13 +44,11 @@ const EventForm = ({
         type: initialData.type || 'partido',
         date: format(date, 'yyyy-MM-dd'),
         time: format(date, 'HH:mm'),
-        maxSlots: initialData.maxSlots || 16,
+        maxSlots: initialData.maxSlots || 20,
         location: initialData.location || '',
         description: initialData.description || '',
         instructions: initialData.instructions || '',
-        isPrivate: initialData.isPrivate === true,
-        selectionMode: initialData.selectionMode || DEFAULT_SELECTION_MODE,
-        attendanceWindow: initialData.attendanceWindow || DEFAULT_ATTENDANCE_WINDOW
+        isPrivate: initialData.isPrivate === true
       })
     } else {
       // Resetear formulario
@@ -77,13 +57,11 @@ const EventForm = ({
         type: 'partido',
         date: '',
         time: '',
-        maxSlots: 16,
+        maxSlots: 20,
         location: '',
         description: '',
         instructions: '',
-        isPrivate: false,
-        selectionMode: DEFAULT_SELECTION_MODE,
-        attendanceWindow: DEFAULT_ATTENDANCE_WINDOW
+        isPrivate: false
       })
     }
     setErrors({})
@@ -115,7 +93,7 @@ const EventForm = ({
     }
 
     if (!formData.maxSlots || formData.maxSlots < 1) {
-      newErrors.maxSlots = 'Debe haber al menos 1 cupo'
+      newErrors.maxSlots = 'Debe haber al menos 1 plaza de campo'
     }
 
     setErrors(newErrors)
@@ -138,9 +116,7 @@ const EventForm = ({
       location: formData.location.trim(),
       description: formData.description.trim(),
       instructions: formData.instructions.trim(),
-      isPrivate: !!formData.isPrivate,
-      selectionMode: formData.selectionMode || DEFAULT_SELECTION_MODE,
-      attendanceWindow: formData.attendanceWindow || DEFAULT_ATTENDANCE_WINDOW
+      isPrivate: !!formData.isPrivate
     }
 
     onSubmit(eventData)
@@ -208,7 +184,7 @@ const EventForm = ({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
-            label="Cupos máximos"
+            label="Jugadores de campo convocados"
             name="maxSlots"
             type="number"
             min="1"
@@ -219,6 +195,7 @@ const EventForm = ({
             icon={Users}
             inputMode="numeric"
             autoComplete="off"
+            helperText={`+ ${GOALKEEPER_SLOTS} arqueros aparte`}
           />
 
           <Input
@@ -233,27 +210,11 @@ const EventForm = ({
           />
         </div>
 
-        <div className="p-3 rounded-xl border border-zinc-200 dark:border-zinc-700 space-y-3">
-          <Select
-            label="¿Cómo se eligen los convocados?"
-            name="selectionMode"
-            value={formData.selectionMode}
-            onChange={handleChange}
-            options={selectionModeOptions}
-            helperText={SELECTION_MODES[formData.selectionMode]?.description}
-          />
-
-          {formData.selectionMode === 'entrenamiento' && (
-            <Select
-              label="Entrenamientos a considerar"
-              name="attendanceWindow"
-              value={formData.attendanceWindow}
-              onChange={handleChange}
-              options={attendanceWindowOptions}
-              helperText="Se cuentan las asistencias a entrenamientos dentro de esa ventana."
-            />
-          )}
-        </div>
+        <p className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 text-xs text-zinc-500 dark:text-zinc-400">
+          La inscripción queda abierta sin tope. Al cerrar la lista eliges desde
+          &laquo;Inscritos&raquo; si convocas por orden de inscripción o por prioridad de
+          entrenamientos.
+        </p>
 
         <label className="flex items-start gap-3 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 cursor-pointer transition-colors">
           <input

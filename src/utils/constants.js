@@ -1,8 +1,8 @@
 // Constantes de la aplicación
 
 // Nombre de la app (puede ser sobrescrito por variable de entorno)
-export const APP_NAME = import.meta.env.VITE_APP_NAME || 'Academia de Fútbol'
-export const APP_SHORT_NAME = import.meta.env.VITE_APP_SHORT_NAME || 'FutbolAcademy'
+export const APP_NAME = import.meta.env?.VITE_APP_NAME || 'Academia de Fútbol'
+export const APP_SHORT_NAME = import.meta.env?.VITE_APP_SHORT_NAME || 'FutbolAcademy'
 
 // Colores del tema
 export const THEME_COLORS = {
@@ -54,19 +54,26 @@ export const EVENT_TYPES = {
   }
 }
 
-// Modo de selección de convocados (lo elige el profesor por evento)
+// Criterio de convocatoria. NO se elige al crear el evento: la inscripción siempre
+// queda abierta y el profesor elige el criterio al cerrar la lista y publicar.
 export const SELECTION_MODES = {
   orden: {
     label: 'Orden de inscripción',
     short: 'Por orden',
-    description: 'Juegan los primeros en inscribirse. Al llenarse los cupos se abre lista de espera.'
+    description: 'Entran los que se inscribieron primero.'
   },
   entrenamiento: {
     label: 'Prioridad por entrenamientos',
     short: 'Por entrenamientos',
-    description: 'La inscripción queda abierta sin tope y el profesor publica la convocatoria: juegan los que más entrenaron.'
+    description: 'Entran los que más entrenaron en la ventana; a igualdad, el que se inscribió antes.'
   }
 }
+
+// Los arqueros se convocan aparte: no compiten por las plazas de campo.
+// ponytail: constante, no campo del evento. Hacerlo configurable si algún día
+// se convocan formatos distintos (futsal, 7v7).
+export const GOALKEEPER_SLOTS = 2
+export const GOALKEEPER_POSITION = 'portero'
 
 // Ventana de tiempo para contar entrenamientos (modo "entrenamiento")
 // ponytail: ventana móvil (últimos N días), no semana/mes calendario — un partido

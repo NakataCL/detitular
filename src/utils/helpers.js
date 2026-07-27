@@ -1,6 +1,7 @@
 // Funciones de utilidad
 import { format, formatDistanceToNow, differenceInDays, differenceInHours, differenceInMinutes, differenceInSeconds, isToday, isTomorrow, isPast, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { GOALKEEPER_SLOTS, GOALKEEPER_POSITION } from './constants.js'
 
 /**
  * Formatea una fecha de Firestore Timestamp a string legible
@@ -81,35 +82,59 @@ export const formatRelativeTime = (timestamp) => {
 }
 
 /**
- * ¿El evento selecciona por entrenamientos en vez de por orden de inscripción?
+ * ¿La convocatoria de este evento se publicó por entrenamientos?
+ * El criterio lo escribe `publishConvocatoria`, no el formulario de creación.
  */
 export const isPriorityMode = (event) => event?.selectionMode === 'entrenamiento'
 
 /**
- * ¿Se puede seguir inscribiendo? En modo "entrenamiento" no hay tope de inscritos.
+ * ¿Se puede seguir inscribiendo? Siempre: los cupos son plazas de convocatoria,
+ * no un tope de inscritos. Sólo cierra la fecha del evento (ver `canRegister`).
  */
-export const isRegistrationOpen = (event) =>
-  isPriorityMode(event) || (event?.currentSlots || 0) < (event?.maxSlots || 0)
+export const isRegistrationOpen = (event) => !!event
 
 /**
- * Ordena las inscripciones de un evento en modo "entrenamiento":
- * más entrenamientos en la ventana primero; a igualdad, el que se inscribió antes.
- * Devuelve las inscripciones con `trainingCount`, `selectionRank` (1-based) y `selected`.
+ * Plazas del grupo al que pertenece una inscripción publicada.
  */
-export const rankRegistrations = (registrations = [], trainingCounts = {}, maxSlots = 0) => {
-  const ms = (t) => t?.toDate?.().getTime() ?? new Date(t || 0).getTime()
+export const groupCap = (event, registration) =>
+  registration?.isGoalkeeper ? GOALKEEPER_SLOTS : (event?.maxSlots || 0)
 
-  return [...registrations]
-    .sort((a, b) => {
-      const diff = (trainingCounts[b.userId] || 0) - (trainingCounts[a.userId] || 0)
-      return diff !== 0 ? diff : ms(a.registeredAt) - ms(b.registeredAt)
-    })
-    .map((reg, i) => ({
+/**
+ * Clasifica las inscripciones de un evento al cerrar la lista.
+ * Dos grupos independientes: arqueros (`GOALKEEPER_SLOTS` plazas) y jugadores de
+ * campo (`maxSlots` plazas). Dentro de cada grupo ordena según `mode`:
+ *  - 'orden': por hora de inscripción.
+ *  - 'entrenamiento': más entrenamientos en la ventana; empate por hora de inscripción.
+ * Devuelve arqueros primero, cada inscripción con `trainingCount`, `isGoalkeeper`,
+ * `selectionRank` (1-based dentro de su grupo) y `selected`.
+ */
+export const rankRegistrations = (
+  registrations = [],
+  { mode = 'orden', trainingCounts = {}, maxSlots = 0, positions = {} } = {}
+) => {
+  const ms = (t) => t?.toDate?.().getTime() ?? new Date(t || 0).getTime()
+  const byOrder = (a, b) => ms(a.registeredAt) - ms(b.registeredAt)
+  const compare =
+    mode === 'entrenamiento'
+      ? (a, b) =>
+          (trainingCounts[b.userId] || 0) - (trainingCounts[a.userId] || 0) || byOrder(a, b)
+      : byOrder
+
+  const isGk = (reg) => positions[reg.userId] === GOALKEEPER_POSITION
+
+  const rank = (list, cap) =>
+    [...list].sort(compare).map((reg, i) => ({
       ...reg,
       trainingCount: trainingCounts[reg.userId] || 0,
+      isGoalkeeper: isGk(reg),
       selectionRank: i + 1,
-      selected: i < maxSlots
+      selected: i < cap
     }))
+
+  return [
+    ...rank(registrations.filter(isGk), GOALKEEPER_SLOTS),
+    ...rank(registrations.filter(reg => !isGk(reg)), maxSlots)
+  ]
 }
 
 /**
@@ -126,28 +151,16 @@ export const getEventStatus = (event, userRegistration = null) => {
     return 'cerrado'
   }
 
-  // En modo "entrenamiento" la inscripción no se cierra al llenar cupos:
-  // los cupos son plazas de titular, no un tope de inscritos.
-  if (!isPriorityMode(event) && event.currentSlots >= event.maxSlots) {
-    return 'lleno'
-  }
-
+  // La inscripción nunca se cierra por cupos: `maxSlots` son plazas de convocatoria
+  // y el profesor decide después. El estado 'lleno' ya no se alcanza.
   return 'abierto'
 }
 
 /**
- * Calcula cupos disponibles
+ * Inscritos vs. plazas de convocatoria (campo + arqueros)
  */
-export const getAvailableSlots = (event) => {
-  return Math.max(0, event.maxSlots - (event.currentSlots || 0))
-}
-
-/**
- * Formatea cupos como string
- */
-export const formatSlots = (event) => {
-  return `${event.currentSlots || 0}/${event.maxSlots}`
-}
+export const formatSlots = (event) =>
+  `${event.currentSlots || 0}/${(event.maxSlots || 0) + GOALKEEPER_SLOTS}`
 
 /**
  * Valida si el usuario puede inscribirse
@@ -169,10 +182,7 @@ export const canRegister = (event, user, userPlan, existingRegistration) => {
     return { canRegister: false, reason: 'El evento ya pasó' }
   }
 
-  // Cupos llenos (en modo "entrenamiento" no aplica: la inscripción sigue abierta)
-  if (!isPriorityMode(event) && event.currentSlots >= event.maxSlots) {
-    return { canRegister: false, reason: 'No hay cupos disponibles' }
-  }
+  // Sin tope de inscritos: la lista queda abierta hasta la fecha del evento.
 
   // Sin plan activo (comentado por si se quiere requerir plan)
   // if (!userPlan || !userPlan.active) {

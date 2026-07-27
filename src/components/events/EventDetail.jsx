@@ -18,18 +18,18 @@ import { Card, Badge, Button, Countdown, Avatar } from '../ui'
 import {
   formatDateTime,
   formatShortDate,
-  formatSlots,
   getEventStatus,
+  groupCap,
   isPriorityMode
 } from '../../utils/helpers'
 import { downloadICS } from '../../utils/calendar'
-import { EVENT_TYPES, REGISTRATION_STATUS, ATTENDANCE_WINDOWS } from '../../utils/constants'
-import { useAuth } from '../../context/AuthContext'
 import {
-  useMyWaitlistPosition,
-  useJoinWaitlist,
-  useLeaveWaitlist
-} from '../../hooks/useWaitlist'
+  EVENT_TYPES,
+  REGISTRATION_STATUS,
+  ATTENDANCE_WINDOWS,
+  GOALKEEPER_SLOTS
+} from '../../utils/constants'
+import { useAuth } from '../../context/AuthContext'
 import { useAlbums } from '../../hooks/useAlbums'
 import { AlbumCreateModal } from '../experiences'
 import { useState } from 'react'
@@ -53,7 +53,6 @@ const EventDetail = ({
   const [createAlbumOpen, setCreateAlbumOpen] = useState(false)
 
   const eventType = EVENT_TYPES[event.type] || EVENT_TYPES.otro
-  const priorityMode = isPriorityMode(event)
   const status = getEventStatus(event, userRegistration)
   const statusConfig = REGISTRATION_STATUS[status]
 
@@ -175,29 +174,17 @@ const EventDetail = ({
                 <Users className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
               </div>
               <div>
-                <p className="text-xs text-zinc-400">Cupos</p>
-                {priorityMode ? (
-                  <>
-                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                      {event.currentSlots || 0} inscritos · {event.maxSlots} juegan
-                    </p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                      La convocatoria la define el profesor: entran los que más entrenaron
-                      ({ATTENDANCE_WINDOWS[event.attendanceWindow || 'mes']?.label.toLowerCase()}).
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                      {formatSlots(event)} inscritos
-                    </p>
-                    {event.currentSlots < event.maxSlots && status === 'abierto' && (
-                      <p className="text-xs text-primary-600 dark:text-primary-400 mt-0.5">
-                        ¡Quedan {event.maxSlots - event.currentSlots} cupos!
-                      </p>
-                    )}
-                  </>
-                )}
+                <p className="text-xs text-zinc-400">Convocatoria</p>
+                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                  {event.currentSlots || 0} inscritos · juegan {event.maxSlots} + {GOALKEEPER_SLOTS} arqueros
+                </p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  {event.convocatoriaPublishedAt
+                    ? isPriorityMode(event)
+                      ? `Convocatoria publicada por entrenamientos (${ATTENDANCE_WINDOWS[event.attendanceWindow || 'mes']?.label.toLowerCase()}).`
+                      : 'Convocatoria publicada por orden de inscripción.'
+                    : 'La inscripción sigue abierta: el profesor cierra la lista y publica la convocatoria.'}
+                </p>
               </div>
             </div>
           </div>
@@ -320,13 +307,7 @@ const EventDetail = ({
 
           {status === 'inscrito' && (
             <div className="space-y-2">
-              {priorityMode ? (
-                <ConvocatoriaStatus event={event} registration={userRegistration} />
-              ) : (
-                <Button fullWidth size="lg" variant="success" disabled>
-                  Ya estás inscrito
-                </Button>
-              )}
+              <ConvocatoriaStatus event={event} registration={userRegistration} />
               {userRegistration?.registeredBy !== 'admin' && (
                 <Button
                   fullWidth
@@ -343,16 +324,6 @@ const EventDetail = ({
                 </p>
               )}
             </div>
-          )}
-
-          {status === 'lleno' && !event.isPrivate && (
-            <WaitlistAction eventId={event.id} isAuthenticated={isAuthenticated} />
-          )}
-
-          {status === 'lleno' && event.isPrivate && (
-            <Button fullWidth size="lg" variant="secondary" disabled>
-              Cupos agotados
-            </Button>
           )}
 
           {status === 'cerrado' && (
@@ -405,8 +376,9 @@ const EventDetail = ({
 }
 
 /**
- * Estado del jugador en un evento con convocatoria por entrenamientos.
- * Antes de publicar sólo está "inscrito"; después es titular o suplente con puesto.
+ * Estado del jugador en el evento. Antes de que el profesor cierre la lista sólo
+ * está "inscrito"; después es convocado o suplente con puesto dentro de su grupo
+ * (arqueros y jugadores de campo se clasifican por separado).
  */
 const ConvocatoriaStatus = ({ event, registration }) => {
   if (!event.convocatoriaPublishedAt || registration?.selected === undefined) {
@@ -416,12 +388,17 @@ const ConvocatoriaStatus = ({ event, registration }) => {
           Inscripción registrada
         </Button>
         <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center">
-          El profesor publicará la convocatoria: juegan los {event.maxSlots} jugadores con más
-          entrenamientos ({ATTENDANCE_WINDOWS[event.attendanceWindow || 'mes']?.label.toLowerCase()}).
+          El profesor cerrará la lista y publicará la convocatoria: {event.maxSlots} jugadores de
+          campo + {GOALKEEPER_SLOTS} arqueros.
         </p>
       </div>
     )
   }
+
+  const byTraining = isPriorityMode(event)
+  const detalle = byTraining
+    ? `${registration.trainingCount} entrenamientos en la ventana`
+    : 'por orden de inscripción'
 
   if (registration.selected) {
     return (
@@ -430,7 +407,8 @@ const ConvocatoriaStatus = ({ event, registration }) => {
           ¡Estás convocado!
         </Button>
         <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center">
-          {registration.trainingCount} entrenamientos en la ventana · puesto #{registration.selectionRank}
+          {registration.isGoalkeeper ? 'Arquero' : 'Jugador de campo'} · puesto #
+          {registration.selectionRank} · {detalle}
         </p>
       </div>
     )
@@ -439,89 +417,13 @@ const ConvocatoriaStatus = ({ event, registration }) => {
   return (
     <div className="space-y-2">
       <Button fullWidth size="lg" variant="secondary" disabled icon={Clock}>
-        Suplente #{registration.selectionRank - (event.maxSlots || 0)}
+        Suplente #{registration.selectionRank - groupCap(event, registration)}
       </Button>
       <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center">
-        Entras si se baja alguien. Suma entrenamientos para subir en la lista
-        ({registration.trainingCount} en la ventana actual).
-      </p>
-    </div>
-  )
-}
-
-const WaitlistAction = ({ eventId, isAuthenticated }) => {
-  const requireAuth = useRequireAuth()
-  const { entry, position, isLoading } = useMyWaitlistPosition(eventId)
-  const join = useJoinWaitlist()
-  const leave = useLeaveWaitlist()
-
-  if (!isAuthenticated) {
-    return (
-      <div className="space-y-2 text-center">
-        <Button fullWidth size="lg" variant="secondary" icon={Clock} onClick={() => requireAuth()}>
-          Iniciar sesión para la lista de espera
-        </Button>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Cupos agotados — entra con tu número y te apuntamos.
-        </p>
-      </div>
-    )
-  }
-
-  if (isLoading) {
-    return (
-      <Button fullWidth size="lg" variant="secondary" disabled>
-        Cargando...
-      </Button>
-    )
-  }
-
-  if (entry) {
-    return (
-      <div className="space-y-2">
-        <Button fullWidth size="lg" variant="success" disabled icon={Clock}>
-          En lista de espera {position ? `· #${position}` : ''}
-        </Button>
-        <Button
-          fullWidth
-          variant="ghost"
-          onClick={async () => {
-            try {
-              await leave.mutateAsync({ entryId: entry.id, eventId })
-              toast.success('Saliste de la lista de espera')
-            } catch {
-              toast.error('No se pudo actualizar')
-            }
-          }}
-          loading={leave.isPending}
-        >
-          Salir de la lista
-        </Button>
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-2 text-center">
-      <Button
-        fullWidth
-        size="lg"
-        variant="outline"
-        icon={Clock}
-        onClick={async () => {
-          try {
-            await join.mutateAsync(eventId)
-            toast.success('Apuntado a la lista de espera')
-          } catch {
-            toast.error('No se pudo apuntar')
-          }
-        }}
-        loading={join.isPending}
-      >
-        Apúntame a la lista de espera
-      </Button>
-      <p className="text-xs text-zinc-500 dark:text-zinc-400">
-        Te avisaremos si se libera un cupo.
+        Entras si se baja alguien
+        {byTraining
+          ? `. Suma entrenamientos para subir en la lista (${registration.trainingCount} en la ventana actual).`
+          : '.'}
       </p>
     </div>
   )

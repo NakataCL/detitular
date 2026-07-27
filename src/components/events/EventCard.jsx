@@ -1,16 +1,12 @@
-// Tarjeta de evento — banner por tipo + barra de cupos
+// Tarjeta de evento — banner por tipo + barra de inscritos vs. plazas de convocatoria
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { MapPin, Users, Lock, Clock } from '../../utils/icons'
+import { MapPin, Users, Lock } from '../../utils/icons'
 import { Badge, Button } from '../ui'
-import { getEventStatus, getTimeRemaining, isPriorityMode } from '../../utils/helpers'
-import { EVENT_TYPES, REGISTRATION_STATUS } from '../../utils/constants'
-import { useMyWaitlist, useJoinWaitlist, useLeaveWaitlist } from '../../hooks/useWaitlist'
-import { useAuth } from '../../context/AuthContext'
-import { useRequireAuth } from '../../hooks/useRequireAuth'
-import toast from 'react-hot-toast'
+import { getEventStatus, getTimeRemaining } from '../../utils/helpers'
+import { EVENT_TYPES, REGISTRATION_STATUS, GOALKEEPER_SLOTS } from '../../utils/constants'
 
 const EventCard = ({
   event,
@@ -23,22 +19,14 @@ const EventCard = ({
   const navigate = useNavigate()
 
   const eventType = EVENT_TYPES[event.type] || EVENT_TYPES.otro
-  const priorityMode = isPriorityMode(event)
   const status = getEventStatus(event, userRegistration)
   const statusConfig = REGISTRATION_STATUS[status]
   const eventDate = event.date?.toDate ? event.date.toDate() : new Date(event.date)
 
-  const max = event.maxSlots || 0
+  // Plazas de convocatoria (campo + arqueros). La inscripción no tiene tope:
+  // la barra sólo indica cuánta competencia hay por esas plazas.
+  const slots = (event.maxSlots || 0) + GOALKEEPER_SLOTS
   const current = event.currentSlots || 0
-  const free = Math.max(0, max - current)
-  const fillPct = max > 0 ? Math.min(100, (current / max) * 100) : 0
-  const freePct = max > 0 ? (free / max) * 100 : 0
-  const fillColor =
-    freePct <= 0 || freePct < 10
-      ? 'bg-red-600'
-      : freePct < 30
-        ? 'bg-amber-500'
-        : 'bg-emerald-500'
 
   const handleClick = () => {
     navigate(`/eventos/${event.id}`)
@@ -88,15 +76,7 @@ const EventCard = ({
               </Badge>
             )}
 
-            <SlotBar
-              free={free}
-              current={current}
-              max={max}
-              fillPct={fillPct}
-              fillColor={fillColor}
-              priority={priorityMode}
-              compact
-            />
+            <SlotBar current={current} slots={slots} compact />
           </div>
         </div>
       </motion.button>
@@ -179,15 +159,8 @@ const EventCard = ({
             </div>
           )}
 
-          {/* Barra de cupos */}
-          <SlotBar
-            free={free}
-            current={current}
-            max={max}
-            fillPct={fillPct}
-            fillColor={fillColor}
-            priority={priorityMode}
-          />
+          {/* Inscritos vs. plazas */}
+          <SlotBar current={current} slots={slots} />
         </div>
 
         {/* Actions */}
@@ -221,16 +194,6 @@ const EventCard = ({
                 </Button>
               )}
 
-              {status === 'lleno' && !event.isPrivate && (
-                <WaitlistButton eventId={event.id} />
-              )}
-
-              {status === 'lleno' && event.isPrivate && (
-                <Button fullWidth variant="secondary" disabled>
-                  Cupos agotados
-                </Button>
-              )}
-
               {status === 'cerrado' && (
                 <Button fullWidth variant="ghost" disabled>
                   Evento finalizado
@@ -244,79 +207,8 @@ const EventCard = ({
   )
 }
 
-const WaitlistButton = ({ eventId }) => {
-  const { isAuthenticated } = useAuth()
-  const requireAuth = useRequireAuth()
-  const { data: entries } = useMyWaitlist()
-  const join = useJoinWaitlist()
-  const leave = useLeaveWaitlist()
-
-  const myEntry = (entries || []).find(e => e.eventId === eventId)
-
-  if (!isAuthenticated) {
-    return (
-      <Button fullWidth variant="outline" icon={Clock} onClick={() => requireAuth()}>
-        Inicia sesión para apuntarte
-      </Button>
-    )
-  }
-
-  if (myEntry) {
-    return (
-      <div className="flex flex-col gap-2">
-        <Button fullWidth variant="secondary" icon={Clock} disabled>
-          En lista de espera
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={async (e) => {
-            e.stopPropagation()
-            try {
-              await leave.mutateAsync({ entryId: myEntry.id, eventId })
-              toast.success('Saliste de la lista de espera')
-            } catch {
-              toast.error('No se pudo actualizar')
-            }
-          }}
-          loading={leave.isPending}
-          className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
-        >
-          Salir de la lista
-        </Button>
-      </div>
-    )
-  }
-
-  return (
-    <Button
-      fullWidth
-      variant="outline"
-      icon={Clock}
-      onClick={async (e) => {
-        e.stopPropagation()
-        try {
-          await join.mutateAsync(eventId)
-          toast.success('Apuntado a la lista de espera')
-        } catch {
-          toast.error('No se pudo apuntar')
-        }
-      }}
-      loading={join.isPending}
-    >
-      Apúntame a la lista de espera
-    </Button>
-  )
-}
-
-const SlotBar = ({ free, current, max, fillPct, fillColor, priority = false, compact = false }) => {
-  if (max === 0) {
-    return (
-      <p className={`${compact ? 'text-xs' : 'text-sm'} text-zinc-500 dark:text-zinc-400`}>
-        Sin cupo definido
-      </p>
-    )
-  }
+const SlotBar = ({ current, slots, compact = false }) => {
+  const fillPct = slots > 0 ? Math.min(100, (current / slots) * 100) : 0
 
   return (
     <div className="space-y-1.5">
@@ -324,25 +216,21 @@ const SlotBar = ({ free, current, max, fillPct, fillColor, priority = false, com
         <span
           className={`${compact ? 'text-xs' : 'text-sm'} font-semibold text-zinc-900 dark:text-zinc-50`}
         >
-          {priority
-            ? `${current} inscritos · ${max} juegan`
-            : free === 0
-              ? 'Cupos agotados'
-              : `${free} ${free === 1 ? 'cupo' : 'cupos'} disponibles`}
+          {current} {current === 1 ? 'inscrito' : 'inscritos'} · {slots} juegan
         </span>
         <span className={`${compact ? 'text-[10px]' : 'text-xs'} text-zinc-500 dark:text-zinc-400 tabular-nums`}>
-          {current}/{max}
+          {current}/{slots}
         </span>
       </div>
       <div className="h-1.5 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
         <div
-          className={`h-full ${fillColor} transition-[width] duration-500`}
+          className="h-full bg-emerald-500 transition-[width] duration-500"
           style={{ width: `${fillPct}%` }}
           role="progressbar"
           aria-valuenow={current}
           aria-valuemin={0}
-          aria-valuemax={max}
-          aria-label={`${free} cupos disponibles de ${max}`}
+          aria-valuemax={slots}
+          aria-label={`${current} inscritos para ${slots} plazas`}
         />
       </div>
     </div>

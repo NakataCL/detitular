@@ -5,7 +5,6 @@ import { es } from 'date-fns/locale'
 import { Modal, Button, EmptyState } from '../ui'
 import { useCreateRegistration } from '../../hooks/useRegistrations'
 import { EVENT_TYPES } from '../../utils/constants'
-import { isPriorityMode } from '../../utils/helpers'
 import toast from 'react-hot-toast'
 
 const PlanReserveSheet = ({
@@ -108,7 +107,6 @@ const PlanReserveSheet = ({
 const ReserveRow = ({ event, selected, disabled, onToggle }) => {
   const eventType = EVENT_TYPES[event.type] || EVENT_TYPES.otro
   const eventDate = event.date?.toDate ? event.date.toDate() : new Date(event.date)
-  const free = (event.maxSlots || 0) - (event.currentSlots || 0)
 
   return (
     <li>
@@ -143,9 +141,7 @@ const ReserveRow = ({ event, selected, disabled, onToggle }) => {
           </p>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
             {format(eventDate, "EEE · HH:mm'h'", { locale: es }).replace('.', '')} ·{' '}
-            {isPriorityMode(event)
-              ? `${event.currentSlots || 0} inscritos`
-              : `${free} ${free === 1 ? 'cupo' : 'cupos'}`}
+            {event.currentSlots || 0} inscritos
           </p>
         </div>
       </label>

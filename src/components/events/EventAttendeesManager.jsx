@@ -1,8 +1,9 @@
 // Modal admin para gestionar inscritos de un evento (ver, añadir, remover, marcar asistencia)
+// y cerrar la lista publicando la convocatoria con el criterio elegido.
 import { Fragment, useMemo, useState } from 'react'
-import { Search, Trash2, Check, Plus, Lock } from '../../utils/icons'
+import { Search, Trash2, Plus, Lock } from '../../utils/icons'
 import { Modal, Button, Avatar, EmptyState, Skeleton, Badge, ConfirmModal } from '../ui'
-import Input from '../ui/Input'
+import Input, { Select } from '../ui/Input'
 import {
   useEventRegistrations,
   useMarkAttendance,
@@ -13,14 +14,31 @@ import {
 } from '../../hooks/useRegistrations'
 import { useAllUsers } from '../../hooks/usePlayer'
 import { useEvent } from '../../hooks/useEvents'
-import { isPriorityMode, rankRegistrations, formatDate, formatPhone, userContact } from '../../utils/helpers'
-import { ATTENDANCE_WINDOWS, DEFAULT_ATTENDANCE_WINDOW } from '../../utils/constants'
+import { rankRegistrations, formatDate, formatPhone, userContact } from '../../utils/helpers'
+import {
+  ATTENDANCE_WINDOWS,
+  DEFAULT_ATTENDANCE_WINDOW,
+  SELECTION_MODES,
+  DEFAULT_SELECTION_MODE,
+  GOALKEEPER_SLOTS
+} from '../../utils/constants'
 import toast from 'react-hot-toast'
+
+const selectionModeOptions = Object.entries(SELECTION_MODES).map(([value, { label }]) => ({
+  value,
+  label
+}))
+
+const attendanceWindowOptions = Object.entries(ATTENDANCE_WINDOWS).map(([value, { label }]) => ({
+  value,
+  label
+}))
 
 const EventAttendeesManager = ({ eventId, onClose }) => {
   const [tab, setTab] = useState('inscritos')
   const [searchTerm, setSearchTerm] = useState('')
   const [pendingRemove, setPendingRemove] = useState(null)
+  const [pendingPublish, setPendingPublish] = useState(false)
 
   const { data: event } = useEvent(eventId)
   const { data: registrations, isLoading: loadingRegs } = useEventRegistrations(eventId)
@@ -29,34 +47,60 @@ const EventAttendeesManager = ({ eventId, onClose }) => {
   const markAttendance = useMarkAttendance()
   const addUser = useAdminAddUserToEvent()
   const removeUser = useAdminRemoveUserFromEvent()
-
-  const isPriority = isPriorityMode(event)
-  const windowKey = event?.attendanceWindow || DEFAULT_ATTENDANCE_WINDOW
-  const { data: trainingCounts, isLoading: loadingCounts } = useTrainingCounts(
-    windowKey,
-    isPriority && !!eventId
-  )
   const publish = usePublishConvocatoria()
 
-  // En modo "entrenamiento" no hay tope de inscritos: los cupos son plazas de titular.
-  const isFull = !isPriority && event && (event.currentSlots || 0) >= (event.maxSlots || 0)
+  // Criterio de cierre: se elige aquí, no al crear el evento. Si ya se publicó,
+  // arranca con el criterio usado la última vez.
+  const [mode, setMode] = useState(null)
+  const [windowKey, setWindowKey] = useState(null)
+  const selectionMode = mode ?? event?.selectionMode ?? DEFAULT_SELECTION_MODE
+  const attendanceWindow = windowKey ?? event?.attendanceWindow ?? DEFAULT_ATTENDANCE_WINDOW
+  const byTraining = selectionMode === 'entrenamiento'
 
-  const rows = useMemo(() => {
-    if (!registrations) return []
-    if (!isPriority) return registrations
-    return rankRegistrations(registrations, trainingCounts || {}, event?.maxSlots || 0)
-  }, [registrations, isPriority, trainingCounts, event?.maxSlots])
+  const { data: trainingCounts, isLoading: loadingCounts } = useTrainingCounts(
+    attendanceWindow,
+    byTraining && !!eventId
+  )
 
-  // La convocatoria publicada queda desactualizada si entró o salió alguien.
+  // La posición viene del perfil: los arqueros se convocan aparte.
+  const positions = useMemo(
+    () => Object.fromEntries((allUsers || []).map(u => [u.id, u.posicionPrincipal])),
+    [allUsers]
+  )
+
+  const rows = useMemo(
+    () =>
+      rankRegistrations(registrations || [], {
+        mode: selectionMode,
+        trainingCounts: trainingCounts || {},
+        maxSlots: event?.maxSlots || 0,
+        positions
+      }),
+    [registrations, selectionMode, trainingCounts, event?.maxSlots, positions]
+  )
+
+  const goalkeepers = rows.filter(r => r.isGoalkeeper)
+  const fieldPlayers = rows.filter(r => !r.isGoalkeeper)
+
+  const published = !!event?.convocatoriaPublishedAt
+  // La convocatoria publicada queda desactualizada si entró o salió alguien,
+  // o si el admin cambió el criterio sin volver a publicar.
   const isStale =
-    isPriority &&
-    !!event?.convocatoriaPublishedAt &&
+    published &&
     (event.convocatoriaCount !== registrations?.length ||
+      event.selectionMode !== selectionMode ||
+      (byTraining && event.attendanceWindow !== attendanceWindow) ||
       (registrations || []).some(r => r.selectionRank === undefined))
 
   const handlePublish = async () => {
+    setPendingPublish(false)
     try {
-      await publish.mutateAsync({ eventId, ranked: rows })
+      await publish.mutateAsync({
+        eventId,
+        ranked: rows,
+        selectionMode,
+        attendanceWindow
+      })
       toast.success('Convocatoria publicada')
     } catch {
       toast.error('No se pudo publicar la convocatoria')
@@ -93,10 +137,6 @@ const EventAttendeesManager = ({ eventId, onClose }) => {
   }
 
   const handleAddUser = async (u) => {
-    if (isFull) {
-      toast.error('Cupos completos')
-      return
-    }
     try {
       await addUser.mutateAsync({
         eventId,
@@ -135,6 +175,71 @@ const EventAttendeesManager = ({ eventId, onClose }) => {
     }
   }
 
+  const renderGroup = (list, cap, titularesLabel) =>
+    list.map((reg, index) => (
+      <Fragment key={reg.id}>
+        {index === 0 && (
+          <p className="pt-2 text-[10px] uppercase tracking-widest font-bold text-zinc-400">
+            {titularesLabel}
+          </p>
+        )}
+        {index === cap && (
+          <p className="pt-2 text-[10px] uppercase tracking-widest font-bold text-zinc-400">
+            Suplentes
+          </p>
+        )}
+        <div
+          className={`flex items-center justify-between p-3 rounded-lg ${
+            reg.selected
+              ? 'bg-zinc-50 dark:bg-zinc-900'
+              : 'bg-zinc-100/60 dark:bg-zinc-900/40 opacity-70'
+          }`}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-sm text-zinc-500 dark:text-zinc-400 w-6 flex-shrink-0">
+              {reg.selectionRank}
+            </span>
+            <Avatar src={reg.userPhoto} name={reg.userName} size="sm" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <p className="font-medium text-zinc-900 dark:text-zinc-50 truncate">
+                  {reg.userName || formatPhone(reg.userTelefono) || reg.userEmail}
+                </p>
+                {reg.registeredBy === 'admin' && (
+                  <Badge variant="info" size="sm">Admin</Badge>
+                )}
+              </div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                {byTraining
+                  ? `${reg.trainingCount} ${reg.trainingCount === 1 ? 'entrenamiento' : 'entrenamientos'}`
+                  : formatPhone(reg.userTelefono) || reg.userEmail}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <button
+              onClick={() => handleToggleAttendance(reg)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                reg.attended
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                  : 'bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-400'
+              }`}
+            >
+              {reg.attended ? '✓ Asistió' : 'Marcar'}
+            </button>
+            <button
+              onClick={() => handleRemoveUser(reg)}
+              className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+              title="Quitar inscripción"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </Fragment>
+    ))
+
   const title = event?.isPrivate ? (
     <span className="flex items-center gap-2">
       <Lock className="w-4 h-4" />
@@ -168,33 +273,50 @@ const EventAttendeesManager = ({ eventId, onClose }) => {
         </button>
       </div>
 
-      {isFull && tab === 'añadir' && (
-        <div className="mb-4 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 text-sm">
-          Cupos completos ({event?.currentSlots}/{event?.maxSlots}). No se pueden añadir más usuarios.
-        </div>
-      )}
-
-      {tab === 'inscritos' && isPriority && (
-        <div className="mb-4 p-3 rounded-xl bg-blue-50 dark:bg-blue-950/30 space-y-2">
-          <p className="text-sm text-blue-900 dark:text-blue-200">
-            Convocatoria por <strong>entrenamientos</strong> —{' '}
-            {ATTENDANCE_WINDOWS[windowKey]?.label.toLowerCase()}. Juegan los{' '}
-            {event?.maxSlots} con más entrenamientos; empate se resuelve por orden de inscripción.
+      {tab === 'inscritos' && (
+        <div className="mb-4 p-3 rounded-xl bg-blue-50 dark:bg-blue-950/30 space-y-3">
+          <p className="text-sm font-semibold text-blue-900 dark:text-blue-200">
+            Cerrar lista y convocar
           </p>
+
+          <Select
+            label="¿Cómo se eligen los convocados?"
+            value={selectionMode}
+            onChange={(e) => setMode(e.target.value)}
+            options={selectionModeOptions}
+            helperText={SELECTION_MODES[selectionMode]?.description}
+          />
+
+          {byTraining && (
+            <Select
+              label="Entrenamientos a considerar"
+              value={attendanceWindow}
+              onChange={(e) => setWindowKey(e.target.value)}
+              options={attendanceWindowOptions}
+              helperText="Se cuentan las asistencias a entrenamientos dentro de esa ventana."
+            />
+          )}
+
           <p className="text-xs text-blue-700 dark:text-blue-300">
-            {event?.convocatoriaPublishedAt
+            Entran {event?.maxSlots} jugadores de campo + {GOALKEEPER_SLOTS} arqueros (los arqueros
+            se eligen aparte, no compiten por las plazas de campo).
+          </p>
+
+          <p className="text-xs text-blue-700 dark:text-blue-300">
+            {published
               ? `Publicada el ${formatDate(event.convocatoriaPublishedAt, "d MMM 'a las' HH:mm")}${
-                  isStale ? ' — la lista cambió desde entonces, vuelve a publicar.' : ''
+                  isStale ? ' — la lista o el criterio cambiaron, vuelve a publicar.' : ''
                 }`
               : 'Sin publicar: los jugadores aún no ven si están convocados.'}
           </p>
+
           <Button
             size="sm"
-            onClick={handlePublish}
+            onClick={() => setPendingPublish(true)}
             loading={publish.isPending}
-            disabled={loadingCounts || !rows.length}
+            disabled={(byTraining && loadingCounts) || !rows.length}
           >
-            {event?.convocatoriaPublishedAt ? 'Actualizar convocatoria' : 'Publicar convocatoria'}
+            {published ? 'Actualizar convocatoria' : 'Publicar convocatoria'}
           </Button>
         </div>
       )}
@@ -208,67 +330,8 @@ const EventAttendeesManager = ({ eventId, onClose }) => {
           </div>
         ) : rows.length > 0 ? (
           <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-            {rows.map((reg, index) => (
-              <Fragment key={reg.id}>
-                {isPriority && index === (event?.maxSlots || 0) && (
-                  <p className="pt-3 text-[10px] uppercase tracking-widest font-bold text-zinc-400">
-                    Suplentes
-                  </p>
-                )}
-                {isPriority && index === 0 && (
-                  <p className="text-[10px] uppercase tracking-widest font-bold text-zinc-400">
-                    Titulares
-                  </p>
-                )}
-              <div
-                className={`flex items-center justify-between p-3 rounded-lg ${
-                  isPriority && !reg.selected
-                    ? 'bg-zinc-100/60 dark:bg-zinc-900/40 opacity-70'
-                    : 'bg-zinc-50 dark:bg-zinc-900'
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400 w-6 flex-shrink-0">{index + 1}</span>
-                  <Avatar src={reg.userPhoto} name={reg.userName} size="sm" />
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-zinc-900 dark:text-zinc-50 truncate">
-                        {reg.userName || formatPhone(reg.userTelefono) || reg.userEmail}
-                      </p>
-                      {reg.registeredBy === 'admin' && (
-                        <Badge variant="info" size="sm">Admin</Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
-                      {isPriority
-                        ? `${reg.trainingCount} ${reg.trainingCount === 1 ? 'entrenamiento' : 'entrenamientos'}`
-                        : formatPhone(reg.userTelefono) || reg.userEmail}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <button
-                    onClick={() => handleToggleAttendance(reg)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      reg.attended
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                        : 'bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-400'
-                    }`}
-                  >
-                    {reg.attended ? '✓ Asistió' : 'Marcar'}
-                  </button>
-                  <button
-                    onClick={() => handleRemoveUser(reg)}
-                    className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    title="Quitar inscripción"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-              </Fragment>
-            ))}
+            {renderGroup(goalkeepers, GOALKEEPER_SLOTS, 'Arqueros')}
+            {renderGroup(fieldPlayers, event?.maxSlots || 0, 'Titulares')}
           </div>
         ) : (
           <EmptyState
@@ -323,7 +386,7 @@ const EventAttendeesManager = ({ eventId, onClose }) => {
                     size="sm"
                     icon={Plus}
                     onClick={() => handleAddUser(u)}
-                    disabled={isFull || addUser.isPending}
+                    disabled={addUser.isPending}
                     loading={addUser.isPending && addUser.variables?.user?.uid === u.id}
                   >
                     Añadir
@@ -344,6 +407,16 @@ const EventAttendeesManager = ({ eventId, onClose }) => {
           )}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={pendingPublish}
+        onClose={() => setPendingPublish(false)}
+        onConfirm={handlePublish}
+        title={published ? 'Actualizar convocatoria' : 'Cerrar lista y publicar'}
+        description={`Se convocarán ${Math.min(fieldPlayers.length, event?.maxSlots || 0)} jugadores de campo y ${Math.min(goalkeepers.length, GOALKEEPER_SLOTS)} arqueros por ${SELECTION_MODES[selectionMode]?.short.toLowerCase()}. Los demás quedan como suplentes y todos verán su estado.`}
+        confirmLabel={published ? 'Actualizar' : 'Publicar'}
+        loading={publish.isPending}
+      />
 
       <ConfirmModal
         isOpen={!!pendingRemove}

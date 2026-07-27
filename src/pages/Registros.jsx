@@ -11,7 +11,7 @@ import {
   useCancelRegistration
 } from '../hooks/useRegistrations'
 import { EVENT_TYPES } from '../utils/constants'
-import { isPriorityMode } from '../utils/helpers'
+import { groupCap } from '../utils/helpers'
 import toast from 'react-hot-toast'
 
 const TABS = [
@@ -239,15 +239,13 @@ const UpcomingCard = ({ registration: reg, onCancel, isCanceling, onView }) => {
             </p>
           )}
 
-          {isPriorityMode(event) && (
-            <p className="mb-4 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-              {reg.selected === undefined || !event.convocatoriaPublishedAt
-                ? 'Convocatoria por entrenamientos — aún sin publicar'
-                : reg.selected
-                  ? '✓ Convocado'
-                  : `Suplente #${reg.selectionRank - (event.maxSlots || 0)}`}
-            </p>
-          )}
+          <p className="mb-4 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+            {reg.selected === undefined || !event.convocatoriaPublishedAt
+              ? 'Inscrito — convocatoria aún sin publicar'
+              : reg.selected
+                ? `✓ Convocado${reg.isGoalkeeper ? ' (arquero)' : ''}`
+                : `Suplente #${reg.selectionRank - groupCap(event, reg)}`}
+          </p>
 
           <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50">
             <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-zinc-500 dark:text-zinc-400">

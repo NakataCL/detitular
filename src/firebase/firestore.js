@@ -93,8 +93,7 @@ export const createEvent = async (eventData, createdBy) => {
   const newEvent = {
     ...eventData,
     isPrivate: eventData.isPrivate === true,
-    selectionMode: eventData.selectionMode || 'orden',
-    attendanceWindow: eventData.attendanceWindow || 'mes',
+    // selectionMode / attendanceWindow los escribe publishConvocatoria al cerrar la lista.
     registeredUserIds: [],
     currentSlots: 0,
     status: 'active',
@@ -373,15 +372,10 @@ export const createRegistration = async (
     if (!eventSnap.exists()) throw new Error('Evento no encontrado')
 
     const event = eventSnap.data()
-    const currentSlots = event.currentSlots || 0
-    const maxSlots = event.maxSlots || 0
     const alreadyMembers = event.registeredUserIds || []
 
-    // En modo "entrenamiento" la inscripción no tiene tope: los cupos son plazas de
-    // titular y la convocatoria se decide después, por entrenamientos acumulados.
-    if (event.selectionMode !== 'entrenamiento' && currentSlots >= maxSlots) {
-      throw new Error('No hay cupos disponibles')
-    }
+    // Sin tope de inscritos: `maxSlots` son plazas de convocatoria y el profesor
+    // decide quién entra al cerrar la lista (ver publishConvocatoria).
     if (alreadyMembers.includes(userId)) {
       throw new Error('Ya estás inscrito en este evento')
     }
@@ -561,22 +555,30 @@ export const getTrainingCounts = async (windowDays = 30) => {
 }
 
 /**
- * Publica la convocatoria de un evento en modo "entrenamiento": escribe en cada
- * inscripción si quedó seleccionada, su puesto y los entrenamientos contados.
+ * Publica la convocatoria de un evento: escribe en cada inscripción si quedó
+ * seleccionada, su puesto dentro de su grupo (campo o arqueros) y los
+ * entrenamientos contados, y en el evento el criterio con el que se cerró.
  * `rankedRegistrations` viene de `rankRegistrations()`.
  */
-export const publishConvocatoria = async (eventId, rankedRegistrations) => {
+export const publishConvocatoria = async (
+  eventId,
+  rankedRegistrations,
+  { selectionMode = 'orden', attendanceWindow = 'mes' } = {}
+) => {
   const batch = writeBatch(db)
 
   rankedRegistrations.forEach((reg) => {
     batch.update(doc(db, 'registrations', reg.id), {
       selected: reg.selected,
       selectionRank: reg.selectionRank,
+      isGoalkeeper: reg.isGoalkeeper,
       trainingCount: reg.trainingCount
     })
   })
 
   batch.update(doc(db, 'events', eventId), {
+    selectionMode,
+    attendanceWindow,
     convocatoriaPublishedAt: serverTimestamp(),
     convocatoriaCount: rankedRegistrations.length,
     updatedAt: serverTimestamp()
@@ -1264,63 +1266,3 @@ export const subscribeToUserRegistrations = (userId, callback) => {
   })
 }
 
-// ============================================
-// LISTA DE ESPERA (WAITLISTS)
-// ============================================
-
-/**
- * Apunta al usuario actual a la lista de espera de un evento.
- * No-op si ya estaba apuntado.
- */
-export const addToWaitlist = async (eventId, userId) => {
-  // Buscar entrada existente
-  const ref = collection(db, 'waitlists')
-  const q = query(
-    ref,
-    where('eventId', '==', eventId),
-    where('userId', '==', userId)
-  )
-  const snap = await getDocs(q)
-  if (!snap.empty) {
-    return { id: snap.docs[0].id, ...snap.docs[0].data() }
-  }
-
-  const docRef = await addDoc(ref, {
-    eventId,
-    userId,
-    notified: false,
-    createdAt: serverTimestamp()
-  })
-  return { id: docRef.id, eventId, userId, notified: false }
-}
-
-/**
- * Saca al usuario de la lista de espera (por id de entrada).
- */
-export const removeFromWaitlist = async (entryId) => {
-  await deleteDoc(doc(db, 'waitlists', entryId))
-}
-
-/**
- * Devuelve las entradas de waitlist del usuario.
- */
-export const getMyWaitlistEntries = async (userId) => {
-  const ref = collection(db, 'waitlists')
-  const q = query(ref, where('userId', '==', userId))
-  const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
-}
-
-/**
- * Devuelve la lista de espera de un evento, ordenada por createdAt asc.
- */
-export const getEventWaitlist = async (eventId) => {
-  const ref = collection(db, 'waitlists')
-  const q = query(
-    ref,
-    where('eventId', '==', eventId),
-    orderBy('createdAt', 'asc')
-  )
-  const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
-}

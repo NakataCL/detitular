@@ -164,13 +164,14 @@ export const useTrainingCounts = (window = DEFAULT_ATTENDANCE_WINDOW, enabled = 
 }
 
 /**
- * Hook admin: publica la convocatoria de un evento (modo "entrenamiento").
+ * Hook admin: cierra la lista y publica la convocatoria con el criterio elegido.
  */
 export const usePublishConvocatoria = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ eventId, ranked }) => publishConvocatoria(eventId, ranked),
+    mutationFn: ({ eventId, ranked, selectionMode, attendanceWindow }) =>
+      publishConvocatoria(eventId, ranked, { selectionMode, attendanceWindow }),
     onSuccess: (_, { eventId }) => {
       queryClient.invalidateQueries({ queryKey: ['registrations'] })
       queryClient.invalidateQueries({ queryKey: ['event', eventId] })

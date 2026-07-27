@@ -12,7 +12,7 @@ import {
 import { useAuth } from '../../context/AuthContext'
 import { useRequireAuth } from '../../hooks/useRequireAuth'
 import { EVENT_TYPES } from '../../utils/constants'
-import { isPriorityMode, isRegistrationOpen } from '../../utils/helpers'
+import { isRegistrationOpen } from '../../utils/helpers'
 import toast from 'react-hot-toast'
 
 const QuickRegisterSheet = ({ isOpen, onClose, onRegistered }) => {
@@ -109,10 +109,7 @@ const QuickRegisterSheet = ({ isOpen, onClose, onRegistered }) => {
 const QuickRow = ({ event, onRegister, isRegistering }) => {
   const eventType = EVENT_TYPES[event.type] || EVENT_TYPES.otro
   const eventDate = event.date?.toDate ? event.date.toDate() : new Date(event.date)
-  const free = (event.maxSlots || 0) - (event.currentSlots || 0)
-  const slotsText = isPriorityMode(event)
-    ? `${event.currentSlots || 0} inscritos`
-    : `${free} ${free === 1 ? 'cupo' : 'cupos'}`
+  const slotsText = `${event.currentSlots || 0} inscritos`
 
   return (
     <div className="flex items-center gap-3 p-3 rounded-2xl border border-zinc-200/80 dark:border-zinc-800">
