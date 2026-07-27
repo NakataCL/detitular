@@ -2,11 +2,14 @@
 import {
   signInWithPopup,
   GoogleAuthProvider,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged
 } from 'firebase/auth'
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from './config'
+import { normalizePhone, phoneToAuthEmail } from '../utils/helpers'
 
 // Proveedor de Google
 const googleProvider = new GoogleAuthProvider()
@@ -32,10 +35,45 @@ export const signInWithGoogle = async () => {
 }
 
 /**
+ * Acceso de jugadores: el número de teléfono ES la credencial, sin SMS.
+ * Por dentro se usa el proveedor Email/Password de Firebase con un correo
+ * sintético derivado del número, así la sesión es una sesión Firebase normal
+ * y las reglas de Firestore siguen funcionando sin cambios.
+ *
+ * ponytail: la contraseña se deriva del propio número — quien conoce el
+ * número puede entrar. Es la decisión de diseño para evitar el costo del SMS.
+ * Upgrade path: signInWithPhoneNumber (OTP) requiere plan Blaze.
+ */
+export const signInWithPhone = async (rawPhone) => {
+  const telefono = normalizePhone(rawPhone)
+  if (!telefono) throw new Error('Número inválido')
+
+  const email = phoneToAuthEmail(telefono)
+  const password = `dt-${telefono.slice(1)}`
+
+  try {
+    // Se intenta crear primero: es la única forma fiable de distinguir cuenta
+    // nueva de existente. La protección de enumeración de Firebase enmascara
+    // auth/user-not-found como auth/invalid-credential.
+    const { user } = await createUserWithEmailAndPassword(auth, email, password)
+    await handleUserAfterAuth(user, { telefono })
+    return { user, isNewUser: true }
+  } catch (error) {
+    if (error.code !== 'auth/email-already-in-use') {
+      console.error('Error al iniciar sesión con teléfono:', error)
+      throw error
+    }
+    const { user } = await signInWithEmailAndPassword(auth, email, password)
+    await handleUserAfterAuth(user, { telefono })
+    return { user, isNewUser: false }
+  }
+}
+
+/**
  * Procesa el usuario después de autenticarse
  * Crea o actualiza el documento del usuario en Firestore
  */
-export const handleUserAfterAuth = async (user) => {
+export const handleUserAfterAuth = async (user, extra = {}) => {
   if (!user) return null
 
   const userRef = doc(db, 'users', user.uid)
@@ -47,14 +85,14 @@ export const handleUserAfterAuth = async (user) => {
 
     const userData = {
       uid: user.uid,
-      email: user.email,
+      email: user.email || '',
       displayName: user.displayName || '',
       photoURL: user.photoURL || '',
       role,
       // Datos personales (se completan después)
       nombre: user.displayName || '',
       edad: null,
-      telefono: '',
+      telefono: extra.telefono || '',
       ciudad: '',
       // Datos futbolísticos
       posicionPrincipal: '',
@@ -78,7 +116,8 @@ export const handleUserAfterAuth = async (user) => {
     const updateData = {
       lastLogin: serverTimestamp(),
       updatedAt: serverTimestamp(),
-      ...(expectedRole !== existingData.role ? { role: expectedRole } : {})
+      ...(expectedRole !== existingData.role ? { role: expectedRole } : {}),
+      ...(extra.telefono ? { telefono: extra.telefono } : {})
     }
     await setDoc(userRef, updateData, { merge: true })
     return { ...existingData, ...updateData, isNewUser: false }

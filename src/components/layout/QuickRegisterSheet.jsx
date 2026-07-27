@@ -10,12 +10,15 @@ import {
   useCreateRegistration
 } from '../../hooks/useRegistrations'
 import { useAuth } from '../../context/AuthContext'
+import { useRequireAuth } from '../../hooks/useRequireAuth'
 import { EVENT_TYPES } from '../../utils/constants'
+import { isPriorityMode, isRegistrationOpen } from '../../utils/helpers'
 import toast from 'react-hot-toast'
 
 const QuickRegisterSheet = ({ isOpen, onClose, onRegistered }) => {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
+  const requireAuth = useRequireAuth()
   const { data: events, isLoading } = useActiveEvents()
   const { data: regs } = useMyRegistrations()
   const createRegistration = useCreateRegistration()
@@ -24,13 +27,13 @@ const QuickRegisterSheet = ({ isOpen, onClose, onRegistered }) => {
 
   const candidates = (events || [])
     .filter(e => !e.isPrivate && !registeredIds.has(e.id))
-    .filter(e => (e.currentSlots || 0) < (e.maxSlots || 0))
+    .filter(isRegistrationOpen)
     .slice(0, 3)
 
   const handleRegister = async (event) => {
     if (!isAuthenticated) {
       onClose()
-      navigate('/login', { state: { from: { pathname: '/' } } })
+      requireAuth()
       return
     }
     try {
@@ -107,6 +110,9 @@ const QuickRow = ({ event, onRegister, isRegistering }) => {
   const eventType = EVENT_TYPES[event.type] || EVENT_TYPES.otro
   const eventDate = event.date?.toDate ? event.date.toDate() : new Date(event.date)
   const free = (event.maxSlots || 0) - (event.currentSlots || 0)
+  const slotsText = isPriorityMode(event)
+    ? `${event.currentSlots || 0} inscritos`
+    : `${free} ${free === 1 ? 'cupo' : 'cupos'}`
 
   return (
     <div className="flex items-center gap-3 p-3 rounded-2xl border border-zinc-200/80 dark:border-zinc-800">
@@ -121,7 +127,7 @@ const QuickRow = ({ event, onRegister, isRegistering }) => {
           {event.title}
         </p>
         <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-          {format(eventDate, "EEE · HH:mm'h'", { locale: es }).replace('.', '')} · {free} {free === 1 ? 'cupo' : 'cupos'}
+          {format(eventDate, "EEE · HH:mm'h'", { locale: es }).replace('.', '')} · {slotsText}
         </p>
       </div>
       {event.isPrivate ? (

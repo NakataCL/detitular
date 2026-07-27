@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { CreditCard, Calendar, AlertTriangle, CheckCircle, CalendarPlus } from '../../utils/icons'
 import { Card, Badge, Button } from '../ui'
 import { PLANS } from '../../utils/constants'
-import { formatDate } from '../../utils/helpers'
+import { formatDate, isRegistrationOpen } from '../../utils/helpers'
 import { useActiveEvents } from '../../hooks/useEvents'
 import { useMyRegistrations } from '../../hooks/useRegistrations'
 import PlanReserveSheet from './PlanReserveSheet'
@@ -24,7 +24,7 @@ const PlanCard = ({ plan, onSelectPlan = null }) => {
     return activeEvents
       .filter(e => !registeredIds.has(e.id))
       .filter(e => !e.isPrivate)
-      .filter(e => (e.currentSlots || 0) < (e.maxSlots || 0))
+      .filter(isRegistrationOpen)
       .filter(e => {
         const d = e.date?.toDate ? e.date.toDate() : new Date(e.date)
         return d <= planExpiresAt

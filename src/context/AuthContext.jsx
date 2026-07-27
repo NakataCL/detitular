@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import {
   signInWithGoogle,
+  signInWithPhone,
   signOut,
   onAuthChange,
   getCurrentUserData
@@ -50,13 +51,28 @@ export const AuthProvider = ({ children }) => {
     return () => unsubscribe()
   }, [])
 
-  // Función de login
-  const login = async () => {
+  // Login con Google — SÓLO administración, expuesto únicamente en /login.
+  // Nombre explícito a propósito: un `login()` genérico invita a llamarlo desde
+  // cualquier pantalla y abrir el popup de Google a jugadores.
+  const loginWithGoogle = async () => {
     setError(null)
     try {
-      const result = await signInWithGoogle()
-      // En desktop, result contiene el usuario
-      // En móvil, result es null (se maneja en handleGoogleRedirect)
+      return await signInWithGoogle()
+    } catch (err) {
+      setError(err.message)
+      throw err
+    }
+  }
+
+  // Login de jugadores: sólo el número de teléfono
+  const loginWithPhone = async (phone) => {
+    setError(null)
+    try {
+      const result = await signInWithPhone(phone)
+      // No esperar al listener de onAuthChange: si llega tarde, ProtectedRoute
+      // vería la sesión como anónima y rebotaría el onboarding a /login.
+      setUser(result.user)
+      setUserData(await getCurrentUserData(result.user.uid, result.user.email))
       return result
     } catch (err) {
       setError(err.message)
@@ -87,21 +103,26 @@ export const AuthProvider = ({ children }) => {
 
   // Verificar roles - chequear tanto Firestore como el email configurado en .env
   const adminEmail = import.meta.env.VITE_ADMIN_EMAIL
-  const isAdmin = userData?.role === 'admin' || user?.email === adminEmail
+  const isAdmin = userData?.role === 'admin' || (!!adminEmail && user?.email === adminEmail)
   const isPlayer = userData?.role === 'jugador'
   const isAuthenticated = !!user
+  // Cuenta creada por teléfono a la que todavía le falta el nombre.
+  // userData === null significa "cargando", no "sin nombre".
+  const needsOnboarding = !!user && !!userData && !userData.nombre
 
   const value = {
     user,
     userData,
     loading,
     error,
-    login,
+    loginWithGoogle,
+    loginWithPhone,
     logout,
     refreshUserData,
     isAdmin,
     isPlayer,
-    isAuthenticated
+    isAuthenticated,
+    needsOnboarding
   }
 
   return (

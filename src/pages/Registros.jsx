@@ -11,6 +11,7 @@ import {
   useCancelRegistration
 } from '../hooks/useRegistrations'
 import { EVENT_TYPES } from '../utils/constants'
+import { isPriorityMode } from '../utils/helpers'
 import toast from 'react-hot-toast'
 
 const TABS = [
@@ -235,6 +236,16 @@ const UpcomingCard = ({ registration: reg, onCancel, isCanceling, onView }) => {
             <p className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 mb-4">
               <MapPin className="w-4 h-4" aria-hidden="true" />
               {event.location}
+            </p>
+          )}
+
+          {isPriorityMode(event) && (
+            <p className="mb-4 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+              {reg.selected === undefined || !event.convocatoriaPublishedAt
+                ? 'Convocatoria por entrenamientos — aún sin publicar'
+                : reg.selected
+                  ? '✓ Convocado'
+                  : `Suplente #${reg.selectionRank - (event.maxSlots || 0)}`}
             </p>
           )}
 

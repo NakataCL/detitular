@@ -93,6 +93,8 @@ export const createEvent = async (eventData, createdBy) => {
   const newEvent = {
     ...eventData,
     isPrivate: eventData.isPrivate === true,
+    selectionMode: eventData.selectionMode || 'orden',
+    attendanceWindow: eventData.attendanceWindow || 'mes',
     registeredUserIds: [],
     currentSlots: 0,
     status: 'active',
@@ -314,12 +316,16 @@ export const getNextEventForUser = async (uid) => {
  */
 export const getNextEventAdmin = async () => {
   const eventsRef = collection(db, 'events')
-  const now = Timestamp.now()
+  // Un evento en curso sigue siendo "el actual" para el admin: si no, a las 19:05
+  // de un entrenamiento de las 19:00 el hero ya saltaría al evento de mañana y
+  // pasar lista abriría el evento equivocado.
+  // ponytail: ventana fija de 3h; si aparecen eventos más largos, usar event.duracion
+  const cutoff = Timestamp.fromMillis(Date.now() - 3 * 60 * 60 * 1000)
 
   const q = query(
     eventsRef,
     where('status', '==', 'active'),
-    where('date', '>=', now),
+    where('date', '>=', cutoff),
     orderBy('date', 'asc'),
     limit(1)
   )
@@ -353,6 +359,7 @@ export const createRegistration = async (
     eventId,
     userName: userData?.displayName || userData?.nombre || '',
     userEmail: userData?.email || '',
+    userTelefono: userData?.telefono || '',
     userPhoto: userData?.photoURL || '',
     registeredAt: serverTimestamp(),
     attended: false,
@@ -370,7 +377,9 @@ export const createRegistration = async (
     const maxSlots = event.maxSlots || 0
     const alreadyMembers = event.registeredUserIds || []
 
-    if (currentSlots >= maxSlots) {
+    // En modo "entrenamiento" la inscripción no tiene tope: los cupos son plazas de
+    // titular y la convocatoria se decide después, por entrenamientos acumulados.
+    if (event.selectionMode !== 'entrenamiento' && currentSlots >= maxSlots) {
       throw new Error('No hay cupos disponibles')
     }
     if (alreadyMembers.includes(userId)) {
@@ -472,6 +481,7 @@ export const adminAddUserToEvent = async (eventId, user, adminUid) => {
     displayName: user.displayName || user.nombre || '',
     nombre: user.nombre,
     email: user.email || '',
+    telefono: user.telefono || '',
     photoURL: user.photoURL || ''
   }
   return createRegistration(
@@ -498,6 +508,81 @@ export const markAttendance = async (registrationId, attended) => {
     attended,
     attendedAt: attended ? serverTimestamp() : null
   })
+}
+
+/**
+ * Cuenta cuántos entrenamientos asistió cada jugador en los últimos `windowDays` días.
+ * Devuelve un mapa { [userId]: nºentrenamientos }. Sólo admin (lee inscripciones ajenas).
+ *
+ * Se cuenta por FECHA DEL EVENTO, no por cuándo se marcó la asistencia, para que
+ * marcar tarde no mueva a un jugador de ventana.
+ */
+export const getTrainingCounts = async (windowDays = 30) => {
+  const since = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000)
+  const now = new Date()
+
+  const eventsSnap = await getDocs(query(
+    collection(db, 'events'),
+    where('date', '>=', Timestamp.fromDate(since))
+  ))
+
+  const trainingIds = eventsSnap.docs
+    .filter((d) => {
+      const data = d.data()
+      const date = data.date?.toDate?.() || new Date(data.date)
+      return data.type === 'entrenamiento' && date <= now
+    })
+    .map((d) => d.id)
+
+  if (trainingIds.length === 0) return {}
+
+  // `in` admite 30 valores por consulta.
+  const chunks = []
+  for (let i = 0; i < trainingIds.length; i += 30) {
+    chunks.push(trainingIds.slice(i, i + 30))
+  }
+
+  const snapshots = await Promise.all(chunks.map(chunk => getDocs(query(
+    collection(db, 'registrations'),
+    where('eventId', 'in', chunk)
+  ))))
+
+  const counts = {}
+  snapshots.forEach((snap) => {
+    snap.docs.forEach((d) => {
+      const reg = d.data()
+      if (reg.attended) {
+        counts[reg.userId] = (counts[reg.userId] || 0) + 1
+      }
+    })
+  })
+
+  return counts
+}
+
+/**
+ * Publica la convocatoria de un evento en modo "entrenamiento": escribe en cada
+ * inscripción si quedó seleccionada, su puesto y los entrenamientos contados.
+ * `rankedRegistrations` viene de `rankRegistrations()`.
+ */
+export const publishConvocatoria = async (eventId, rankedRegistrations) => {
+  const batch = writeBatch(db)
+
+  rankedRegistrations.forEach((reg) => {
+    batch.update(doc(db, 'registrations', reg.id), {
+      selected: reg.selected,
+      selectionRank: reg.selectionRank,
+      trainingCount: reg.trainingCount
+    })
+  })
+
+  batch.update(doc(db, 'events', eventId), {
+    convocatoriaPublishedAt: serverTimestamp(),
+    convocatoriaCount: rankedRegistrations.length,
+    updatedAt: serverTimestamp()
+  })
+
+  await batch.commit()
 }
 
 // ============================================

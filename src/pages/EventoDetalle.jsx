@@ -10,13 +10,13 @@ import {
   useCreateRegistration,
   useCancelRegistration
 } from '../hooks/useRegistrations'
-import { useAuth } from '../context/AuthContext'
+import { useRequireAuth } from '../hooks/useRequireAuth'
 import toast from 'react-hot-toast'
 
 const EventoDetalle = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuth()
+  const requireAuth = useRequireAuth()
   const [confirmedEvent, setConfirmedEvent] = useState(null)
 
   const { data: event, isLoading: loadingEvent } = useEvent(id)
@@ -27,10 +27,7 @@ const EventoDetalle = () => {
   const cancelRegistration = useCancelRegistration()
 
   const handleRegister = async () => {
-    if (!isAuthenticated) {
-      toast.error('Debes iniciar sesión para inscribirte')
-      return
-    }
+    if (!requireAuth()) return
 
     try {
       await createRegistration.mutateAsync(id)

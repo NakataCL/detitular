@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext'
 import { usePlayer } from '../hooks/usePlayer'
 import { useEventReminders } from '../hooks/useEventReminders'
 import { POSITIONS, FOOT_OPTIONS } from '../utils/constants'
+import { formatPhone, userContact } from '../utils/helpers'
 import toast from 'react-hot-toast'
 
 const Perfil = () => {
@@ -54,7 +55,7 @@ const Perfil = () => {
           <Edit2 className="w-4 h-4" />
         </Button>
         <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400 text-center">
-          {user?.email}
+          {userContact(player) || user?.email}
         </p>
       </div>
 
@@ -82,7 +83,7 @@ const Perfil = () => {
         <div className="space-y-0">
           <InfoRow label="Edad" value={player?.edad ? `${player.edad} años` : '-'} />
           <InfoRow label="Ciudad" value={player?.ciudad || '-'} />
-          <InfoRow label="Teléfono" value={player?.telefono || '-'} />
+          <InfoRow label="Teléfono" value={formatPhone(player?.telefono) || '-'} />
           <InfoRow
             label="Posición secundaria"
             value={POSITIONS.find(p => p.value === player?.posicionSecundaria)?.label || '-'}

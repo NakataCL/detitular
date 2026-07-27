@@ -16,7 +16,7 @@ const Header = ({
 }) => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { user, userData, isAuthenticated, login } = useAuth()
+  const { user, userData, isAuthenticated } = useAuth()
 
   const handleBack = () => {
     if (onBack) {
@@ -26,13 +26,7 @@ const Header = ({
     }
   }
 
-  const handleLogin = async () => {
-    try {
-      await login()
-    } catch (error) {
-      console.error('Error al iniciar sesión:', error)
-    }
-  }
+  const handleLogin = () => navigate('/login', { state: { from: location } })
 
   const getDefaultTitle = () => {
     const paths = {

@@ -91,7 +91,7 @@ const Topbar = () => {
           </button>
         ) : (
           <button
-            onClick={() => navigate('/login')}
+            onClick={() => navigate('/login', { state: { from: location } })}
             className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors"
           >
             Iniciar sesión

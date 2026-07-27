@@ -47,7 +47,7 @@ const Sidebar = () => {
         collapsed ? 'w-[72px]' : 'w-60'
       }`}
     >
-      <div className="sticky top-0 h-screen flex flex-col">
+      <div className="h-full flex flex-col overflow-y-auto">
       {/* Header */}
       <div className={`flex flex-col items-center px-4 ${collapsed ? 'py-4' : 'pt-6 pb-4'}`}>
         {collapsed ? (

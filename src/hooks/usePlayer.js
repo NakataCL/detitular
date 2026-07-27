@@ -219,7 +219,8 @@ export const useSearchUsers = (searchTerm) => {
   const filteredUsers = allUsers.filter(user =>
     user.nombre?.toLowerCase().includes(term) ||
     user.displayName?.toLowerCase().includes(term) ||
-    user.email?.toLowerCase().includes(term)
+    user.email?.toLowerCase().includes(term) ||
+    user.telefono?.includes(term.replace(/\D/g, ''))
   )
 
   return { users: filteredUsers, loading: false }

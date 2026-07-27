@@ -4,10 +4,26 @@ import { motion } from 'framer-motion'
 import { Calendar, MapPin, Users, FileText, Clock, Lock } from '../../utils/icons'
 import { Button, Card, Modal } from '../ui'
 import Input, { Textarea, Select } from '../ui/Input'
-import { EVENT_TYPES } from '../../utils/constants'
+import {
+  EVENT_TYPES,
+  SELECTION_MODES,
+  ATTENDANCE_WINDOWS,
+  DEFAULT_SELECTION_MODE,
+  DEFAULT_ATTENDANCE_WINDOW
+} from '../../utils/constants'
 import { format } from 'date-fns'
 
 const eventTypeOptions = Object.entries(EVENT_TYPES).map(([value, { label }]) => ({
+  value,
+  label
+}))
+
+const selectionModeOptions = Object.entries(SELECTION_MODES).map(([value, { label }]) => ({
+  value,
+  label
+}))
+
+const attendanceWindowOptions = Object.entries(ATTENDANCE_WINDOWS).map(([value, { label }]) => ({
   value,
   label
 }))
@@ -28,7 +44,9 @@ const EventForm = ({
     location: '',
     description: '',
     instructions: '',
-    isPrivate: false
+    isPrivate: false,
+    selectionMode: DEFAULT_SELECTION_MODE,
+    attendanceWindow: DEFAULT_ATTENDANCE_WINDOW
   })
   const [errors, setErrors] = useState({})
 
@@ -48,7 +66,9 @@ const EventForm = ({
         location: initialData.location || '',
         description: initialData.description || '',
         instructions: initialData.instructions || '',
-        isPrivate: initialData.isPrivate === true
+        isPrivate: initialData.isPrivate === true,
+        selectionMode: initialData.selectionMode || DEFAULT_SELECTION_MODE,
+        attendanceWindow: initialData.attendanceWindow || DEFAULT_ATTENDANCE_WINDOW
       })
     } else {
       // Resetear formulario
@@ -61,7 +81,9 @@ const EventForm = ({
         location: '',
         description: '',
         instructions: '',
-        isPrivate: false
+        isPrivate: false,
+        selectionMode: DEFAULT_SELECTION_MODE,
+        attendanceWindow: DEFAULT_ATTENDANCE_WINDOW
       })
     }
     setErrors({})
@@ -116,7 +138,9 @@ const EventForm = ({
       location: formData.location.trim(),
       description: formData.description.trim(),
       instructions: formData.instructions.trim(),
-      isPrivate: !!formData.isPrivate
+      isPrivate: !!formData.isPrivate,
+      selectionMode: formData.selectionMode || DEFAULT_SELECTION_MODE,
+      attendanceWindow: formData.attendanceWindow || DEFAULT_ATTENDANCE_WINDOW
     }
 
     onSubmit(eventData)
@@ -207,6 +231,28 @@ const EventForm = ({
             autoComplete="off"
             autoCapitalize="words"
           />
+        </div>
+
+        <div className="p-3 rounded-xl border border-zinc-200 dark:border-zinc-700 space-y-3">
+          <Select
+            label="¿Cómo se eligen los convocados?"
+            name="selectionMode"
+            value={formData.selectionMode}
+            onChange={handleChange}
+            options={selectionModeOptions}
+            helperText={SELECTION_MODES[formData.selectionMode]?.description}
+          />
+
+          {formData.selectionMode === 'entrenamiento' && (
+            <Select
+              label="Entrenamientos a considerar"
+              name="attendanceWindow"
+              value={formData.attendanceWindow}
+              onChange={handleChange}
+              options={attendanceWindowOptions}
+              helperText="Se cuentan las asistencias a entrenamientos dentro de esa ventana."
+            />
+          )}
         </div>
 
         <label className="flex items-start gap-3 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 cursor-pointer transition-colors">

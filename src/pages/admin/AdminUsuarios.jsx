@@ -23,7 +23,7 @@ import {
 } from '../../hooks/usePlayer'
 import { useAuth } from '../../context/AuthContext'
 import { PLANS, POSITIONS } from '../../utils/constants'
-import { formatDate } from '../../utils/helpers'
+import { formatDate, userContact } from '../../utils/helpers'
 import toast from 'react-hot-toast'
 
 const AdminUsuarios = () => {
@@ -48,7 +48,8 @@ const AdminUsuarios = () => {
     return (
       user.nombre?.toLowerCase().includes(term) ||
       user.displayName?.toLowerCase().includes(term) ||
-      user.email?.toLowerCase().includes(term)
+      user.email?.toLowerCase().includes(term) ||
+      user.telefono?.includes(term.replace(/\D/g, ''))
     )
   }) || []
 
@@ -165,7 +166,7 @@ const AdminUsuarios = () => {
       <div className="mb-8">
         <Input
           type="search"
-          placeholder="Buscar por nombre o email..."
+          placeholder="Buscar por nombre o teléfono..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           icon={Search}
@@ -398,7 +399,7 @@ const UserCard = ({
               </Badge>
             )}
           </div>
-          <p className="text-sm text-zinc-400 truncate">{user.email}</p>
+          <p className="text-sm text-zinc-400 truncate">{userContact(user)}</p>
           {(() => {
             const principal = POSITIONS.find(p => p.value === user.posicionPrincipal)?.label
             const secundaria = POSITIONS.find(p => p.value === user.posicionSecundaria)?.label
@@ -447,7 +448,7 @@ const PlanModal = ({ isOpen, onClose, user, onActivate, isLoading }) => {
               <p className="font-medium text-zinc-900 dark:text-zinc-50">
                 {user.nombre || user.displayName}
               </p>
-              <p className="text-sm text-zinc-400">{user.email}</p>
+              <p className="text-sm text-zinc-400">{userContact(user)}</p>
             </div>
           </div>
 
@@ -496,7 +497,7 @@ const DeleteUserModal = ({ user, onClose, onConfirm, isLoading }) => {
               <p className="font-medium text-zinc-900 dark:text-zinc-50 truncate">
                 {user.nombre || user.displayName}
               </p>
-              <p className="text-sm text-zinc-400 truncate">{user.email}</p>
+              <p className="text-sm text-zinc-400 truncate">{userContact(user)}</p>
             </div>
           </div>
 

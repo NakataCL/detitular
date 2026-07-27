@@ -5,6 +5,7 @@ import { es } from 'date-fns/locale'
 import { Modal, Button, EmptyState } from '../ui'
 import { useCreateRegistration } from '../../hooks/useRegistrations'
 import { EVENT_TYPES } from '../../utils/constants'
+import { isPriorityMode } from '../../utils/helpers'
 import toast from 'react-hot-toast'
 
 const PlanReserveSheet = ({
@@ -141,7 +142,10 @@ const ReserveRow = ({ event, selected, disabled, onToggle }) => {
             {event.title}
           </p>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            {format(eventDate, "EEE · HH:mm'h'", { locale: es }).replace('.', '')} · {free} {free === 1 ? 'cupo' : 'cupos'}
+            {format(eventDate, "EEE · HH:mm'h'", { locale: es }).replace('.', '')} ·{' '}
+            {isPriorityMode(event)
+              ? `${event.currentSlots || 0} inscritos`
+              : `${free} ${free === 1 ? 'cupo' : 'cupos'}`}
           </p>
         </div>
       </label>

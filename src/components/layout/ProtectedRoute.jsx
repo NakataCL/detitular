@@ -22,6 +22,8 @@ const ProtectedRoute = ({
     return <Navigate to={redirectTo} state={{ from: location }} replace />
   }
 
+  // El guard de onboarding vive en Layout, que envuelve todas las páginas.
+
   // Si requiere admin y no es admin
   if (requireAdmin && !isAdmin) {
     return <Navigate to="/" replace />

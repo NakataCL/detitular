@@ -10,8 +10,11 @@ import {
   adminAddUserToEvent,
   adminRemoveUserFromEvent,
   subscribeToUserRegistrations,
-  getEvent
+  getEvent,
+  getTrainingCounts,
+  publishConvocatoria
 } from '../firebase/firestore'
+import { ATTENDANCE_WINDOWS, DEFAULT_ATTENDANCE_WINDOW } from '../utils/constants'
 import { useAuth } from '../context/AuthContext'
 import { useEffect, useState } from 'react'
 
@@ -139,6 +142,39 @@ export const useMarkAttendance = () => {
     mutationFn: ({ registrationId, attended }) => markAttendance(registrationId, attended),
     onSuccess: (_, { eventId }) => {
       queryClient.invalidateQueries({ queryKey: ['registrations', 'event', eventId] })
+      // La asistencia alimenta el ranking de convocatorias por entrenamientos.
+      queryClient.invalidateQueries({ queryKey: ['trainingCounts'] })
+    }
+  })
+}
+
+/**
+ * Hook admin: entrenamientos asistidos por jugador en la ventana indicada
+ * ('semana' | 'mes'). Devuelve { [userId]: nº }.
+ */
+export const useTrainingCounts = (window = DEFAULT_ATTENDANCE_WINDOW, enabled = true) => {
+  const days = ATTENDANCE_WINDOWS[window]?.days ?? ATTENDANCE_WINDOWS[DEFAULT_ATTENDANCE_WINDOW].days
+
+  return useQuery({
+    queryKey: ['trainingCounts', days],
+    queryFn: () => getTrainingCounts(days),
+    enabled,
+    staleTime: 1000 * 60 * 5
+  })
+}
+
+/**
+ * Hook admin: publica la convocatoria de un evento (modo "entrenamiento").
+ */
+export const usePublishConvocatoria = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ eventId, ranked }) => publishConvocatoria(eventId, ranked),
+    onSuccess: (_, { eventId }) => {
+      queryClient.invalidateQueries({ queryKey: ['registrations'] })
+      queryClient.invalidateQueries({ queryKey: ['event', eventId] })
+      queryClient.invalidateQueries({ queryKey: ['events'] })
     }
   })
 }

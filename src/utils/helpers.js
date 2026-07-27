@@ -81,6 +81,38 @@ export const formatRelativeTime = (timestamp) => {
 }
 
 /**
+ * ¿El evento selecciona por entrenamientos en vez de por orden de inscripción?
+ */
+export const isPriorityMode = (event) => event?.selectionMode === 'entrenamiento'
+
+/**
+ * ¿Se puede seguir inscribiendo? En modo "entrenamiento" no hay tope de inscritos.
+ */
+export const isRegistrationOpen = (event) =>
+  isPriorityMode(event) || (event?.currentSlots || 0) < (event?.maxSlots || 0)
+
+/**
+ * Ordena las inscripciones de un evento en modo "entrenamiento":
+ * más entrenamientos en la ventana primero; a igualdad, el que se inscribió antes.
+ * Devuelve las inscripciones con `trainingCount`, `selectionRank` (1-based) y `selected`.
+ */
+export const rankRegistrations = (registrations = [], trainingCounts = {}, maxSlots = 0) => {
+  const ms = (t) => t?.toDate?.().getTime() ?? new Date(t || 0).getTime()
+
+  return [...registrations]
+    .sort((a, b) => {
+      const diff = (trainingCounts[b.userId] || 0) - (trainingCounts[a.userId] || 0)
+      return diff !== 0 ? diff : ms(a.registeredAt) - ms(b.registeredAt)
+    })
+    .map((reg, i) => ({
+      ...reg,
+      trainingCount: trainingCounts[reg.userId] || 0,
+      selectionRank: i + 1,
+      selected: i < maxSlots
+    }))
+}
+
+/**
  * Obtiene el estado de un evento según cupos
  */
 export const getEventStatus = (event, userRegistration = null) => {
@@ -94,7 +126,9 @@ export const getEventStatus = (event, userRegistration = null) => {
     return 'cerrado'
   }
 
-  if (event.currentSlots >= event.maxSlots) {
+  // En modo "entrenamiento" la inscripción no se cierra al llenar cupos:
+  // los cupos son plazas de titular, no un tope de inscritos.
+  if (!isPriorityMode(event) && event.currentSlots >= event.maxSlots) {
     return 'lleno'
   }
 
@@ -135,8 +169,8 @@ export const canRegister = (event, user, userPlan, existingRegistration) => {
     return { canRegister: false, reason: 'El evento ya pasó' }
   }
 
-  // Cupos llenos
-  if (event.currentSlots >= event.maxSlots) {
+  // Cupos llenos (en modo "entrenamiento" no aplica: la inscripción sigue abierta)
+  if (!isPriorityMode(event) && event.currentSlots >= event.maxSlots) {
     return { canRegister: false, reason: 'No hay cupos disponibles' }
   }
 
@@ -224,12 +258,38 @@ export const isValidEmail = (email) => {
 }
 
 /**
- * Valida teléfono
+ * Normaliza un teléfono a formato E.164 (+56912345678). Devuelve null si no es válido.
+ * ponytail: prefijo país fijo +56, sin libphonenumber-js. Cambiar si la academia
+ * se abre a otros países.
  */
-export const isValidPhone = (phone) => {
-  const regex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/
-  return phone.length >= 8 && regex.test(phone)
+export const normalizePhone = (input) => {
+  const raw = String(input || '').trim()
+  const digits = raw.replace(/\D/g, '')
+  if (!digits) return null
+
+  const e164 = raw.startsWith('+') ? `+${digits}` : `+56${digits.replace(/^56/, '')}`
+  return /^\+[1-9]\d{7,14}$/.test(e164) ? e164 : null
 }
+
+/**
+ * Correo interno derivado del número, usado como credencial de Firebase.
+ * El jugador nunca lo ve.
+ */
+export const phoneToAuthEmail = (e164) => `${e164.slice(1)}@detitular.app`
+
+/**
+ * Formatea un E.164 chileno para mostrar: +56912345678 → +56 9 1234 5678
+ */
+export const formatPhone = (e164) => {
+  const match = /^\+56(\d)(\d{4})(\d{4})$/.exec(e164 || '')
+  return match ? `+56 ${match[1]} ${match[2]} ${match[3]}` : e164 || ''
+}
+
+/**
+ * Dato de contacto visible de un usuario. Prefiere el teléfono sobre el
+ * correo sintético de las cuentas creadas por número.
+ */
+export const userContact = (u) => formatPhone(u?.telefono) || u?.email || ''
 
 /**
  * Genera color único basado en un string (para avatars)

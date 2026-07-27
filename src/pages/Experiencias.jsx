@@ -5,8 +5,9 @@ import { useNavigate } from 'react-router-dom'
 import { Plus, Image as ImageIcon } from '../utils/icons'
 import { Button, Skeleton, EmptyState } from '../components/ui'
 import { AlbumCard, AlbumCreateModal } from '../components/experiences'
-import { useAlbums, useUnclassifiedExperiences } from '../hooks/useAlbums'
+import { useAlbums, useUnclassifiedExperiences, useDeleteAlbum } from '../hooks/useAlbums'
 import { useAuth } from '../context/AuthContext'
+import toast from 'react-hot-toast'
 import { EXPERIENCE_CATEGORIES, UNCLASSIFIED_ALBUM_ID } from '../utils/constants'
 
 const ALL = 'all'
@@ -18,6 +19,8 @@ const Experiencias = () => {
   const [category, setCategory] = useState(ALL)
   const [year, setYear] = useState(null)
   const [createOpen, setCreateOpen] = useState(false)
+
+  const { mutate: deleteAlbum, isPending: isDeleting } = useDeleteAlbum()
 
   const { data: albums, isLoading } = useAlbums({
     category: category === ALL ? null : category,
@@ -44,6 +47,14 @@ const Experiencias = () => {
   }, [albums])
 
   const showUnclassifiedCard = isAdmin && (unclassified?.length || 0) > 0
+
+  const handleDeleteAlbum = (album) => {
+    if (!window.confirm(`¿Eliminar el álbum "${album.title}" y todas sus fotos? Esta acción no se puede deshacer.`)) return
+    deleteAlbum(album.id, {
+      onSuccess: () => toast.success('Álbum eliminado'),
+      onError: () => toast.error('Error al eliminar el álbum'),
+    })
+  }
 
   return (
     <div className="px-4 sm:px-6 md:px-12 pt-8 sm:pt-10 pb-12 md:pt-14 md:pb-20 max-w-5xl mx-auto">
@@ -126,7 +137,12 @@ const Experiencias = () => {
             />
           )}
           {(albums || []).map((album) => (
-            <AlbumCard key={album.id} album={album} />
+            <AlbumCard
+              key={album.id}
+              album={album}
+              showDelete={isAdmin}
+              onDelete={handleDeleteAlbum}
+            />
           ))}
         </motion.div>
       )}

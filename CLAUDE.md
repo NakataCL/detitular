@@ -28,22 +28,29 @@ No test framework is configured.
 
 - **`src/firebase/`** — Service layer wrapping Firebase SDK. Separated into `config.js`, `auth.js`, `firestore.js`. All Firestore CRUD lives in `firestore.js`.
 - **`src/services/cloudinary.js`** — Image upload service (replaces Firebase Storage). Exposes `uploadProfileImage`, `uploadExperienceImage`, `deleteFile` (no-op on client; orphans cleaned via Cloudinary dashboard). Uses unsigned upload preset.
-- **`src/context/AuthContext.jsx`** — Provides `useAuth()` hook with `user`, `userData`, `isAdmin`, `isPlayer`, `isAuthenticated`, `login`, `logout`, `refreshUserData`. Google OAuth with redirect handling for mobile.
+- **`src/context/AuthContext.jsx`** — Provides `useAuth()` hook with `user`, `userData`, `isAdmin`, `isPlayer`, `isAuthenticated`, `needsOnboarding`, `login`, `loginWithPhone`, `logout`, `refreshUserData`.
 - **`src/hooks/`** — Custom hooks wrapping TanStack Query for data fetching (`useEvents`, `usePlayer`, `useRegistrations`, `useExperiences`, `useStats`, `usePWA`).
 - **`src/components/layout/ProtectedRoute`** — Route guard supporting `requireAuth` and `requireAdmin` props.
 - **`src/utils/constants.js`** — App-wide constants (positions, plan types, categories).
 - **`src/utils/helpers.js`** — Date formatting (using `date-fns`), validation, and utility functions.
 
 **Routing:**
-- Public: `/`, `/eventos`, `/eventos/:id`, `/experiencias`
-- Authenticated: `/registros`, `/perfil`
+- Public: `/`, `/eventos`, `/eventos/:id`, `/experiencias`, `/login`
+- Authenticated: `/registros`, `/perfil`, `/bienvenido` (onboarding)
 - Admin: `/admin`, `/admin/eventos`, `/admin/usuarios`
 
 **Firestore collections:** `users`, `events`, `registrations`, `experiences`
 
 - `events` documents may include an optional `instructions` string. When present it surfaces in the post-registration confirmation sheet (see `RegistrationConfirmSheet`).
+- `events.selectionMode` (`'orden' | 'entrenamiento'`, default `orden`) decides how the squad is picked. In `entrenamiento` mode registration has no cap (`maxSlots` = starting spots) and the admin publishes the squad from `EventAttendeesManager`, writing `selected` / `selectionRank` / `trainingCount` onto each registration. Ranking lives in `rankRegistrations` (`src/utils/helpers.js`), attendance counting in `getTrainingCounts` (window from `events.attendanceWindow`: `semana` = 7 days, `mes` = 30).
 
 **Roles:** `admin` (configured via `VITE_ADMIN_EMAIL`) and `jugador` (default for all other users).
+
+**Authentication:** two paths, both landing on a normal Firebase session.
+- **Players — phone only, no SMS.** `signInWithPhone` (`src/firebase/auth.js`) normalizes the number to E.164 via `normalizePhone` (`src/utils/helpers.js`) and derives a synthetic credential (`56912345678@detitular.app` + a password derived from the number) against the Email/Password provider. The number *is* the credential — it is never verified, a deliberate trade-off to avoid the Blaze plan that SMS OTP requires. Upgrading to real `signInWithPhoneNumber` later needs no data migration: `users.telefono` already holds E.164.
+- **Admin — Google OAuth**, unchanged (`signInWithPopup`, hidden behind the "Soy administrador" link on `/login`). `firestore.rules` still keys admin off `request.auth.token.email`, which only a Google session carries.
+- New phone accounts have no `nombre`, so `ProtectedRoute` bounces them to `/bienvenido` until they fill in name + position.
+- The `users` rules forbid self-writes to `role`/`plan`/`uid`, so an open phone login cannot escalate to admin.
 
 ## Key Patterns
 

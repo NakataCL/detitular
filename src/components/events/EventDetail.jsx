@@ -13,10 +13,17 @@ import {
   ArrowRight
 } from '../../utils/icons'
 import { useNavigate } from 'react-router-dom'
+import { useRequireAuth } from '../../hooks/useRequireAuth'
 import { Card, Badge, Button, Countdown, Avatar } from '../ui'
-import { formatDateTime, formatShortDate, formatSlots, getEventStatus } from '../../utils/helpers'
+import {
+  formatDateTime,
+  formatShortDate,
+  formatSlots,
+  getEventStatus,
+  isPriorityMode
+} from '../../utils/helpers'
 import { downloadICS } from '../../utils/calendar'
-import { EVENT_TYPES, REGISTRATION_STATUS } from '../../utils/constants'
+import { EVENT_TYPES, REGISTRATION_STATUS, ATTENDANCE_WINDOWS } from '../../utils/constants'
 import { useAuth } from '../../context/AuthContext'
 import {
   useMyWaitlistPosition,
@@ -39,12 +46,14 @@ const EventDetail = ({
   isCanceling = false
 }) => {
   const navigate = useNavigate()
-  const { isAuthenticated, login, isAdmin } = useAuth()
+  const { isAuthenticated, isAdmin } = useAuth()
+  const requireAuth = useRequireAuth()
   const { data: linkedAlbums = [] } = useAlbums({ eventId: event?.id })
   const linkedAlbum = linkedAlbums[0] || null
   const [createAlbumOpen, setCreateAlbumOpen] = useState(false)
 
   const eventType = EVENT_TYPES[event.type] || EVENT_TYPES.otro
+  const priorityMode = isPriorityMode(event)
   const status = getEventStatus(event, userRegistration)
   const statusConfig = REGISTRATION_STATUS[status]
 
@@ -80,17 +89,8 @@ const EventDetail = ({
     toast.success('Descargando archivo de calendario')
   }
 
-  const handleRegister = async () => {
-    if (!isAuthenticated) {
-      try {
-        await login()
-        onRegister?.(event.id)
-      } catch {
-        toast.error('Debes iniciar sesión para inscribirte')
-      }
-      return
-    }
-
+  const handleRegister = () => {
+    if (!requireAuth()) return
     onRegister?.(event.id)
   }
 
@@ -176,13 +176,27 @@ const EventDetail = ({
               </div>
               <div>
                 <p className="text-xs text-zinc-400">Cupos</p>
-                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                  {formatSlots(event)} inscritos
-                </p>
-                {event.currentSlots < event.maxSlots && status === 'abierto' && (
-                  <p className="text-xs text-primary-600 dark:text-primary-400 mt-0.5">
-                    ¡Quedan {event.maxSlots - event.currentSlots} cupos!
-                  </p>
+                {priorityMode ? (
+                  <>
+                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                      {event.currentSlots || 0} inscritos · {event.maxSlots} juegan
+                    </p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                      La convocatoria la define el profesor: entran los que más entrenaron
+                      ({ATTENDANCE_WINDOWS[event.attendanceWindow || 'mes']?.label.toLowerCase()}).
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                      {formatSlots(event)} inscritos
+                    </p>
+                    {event.currentSlots < event.maxSlots && status === 'abierto' && (
+                      <p className="text-xs text-primary-600 dark:text-primary-400 mt-0.5">
+                        ¡Quedan {event.maxSlots - event.currentSlots} cupos!
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -306,9 +320,13 @@ const EventDetail = ({
 
           {status === 'inscrito' && (
             <div className="space-y-2">
-              <Button fullWidth size="lg" variant="success" disabled>
-                Ya estás inscrito
-              </Button>
+              {priorityMode ? (
+                <ConvocatoriaStatus event={event} registration={userRegistration} />
+              ) : (
+                <Button fullWidth size="lg" variant="success" disabled>
+                  Ya estás inscrito
+                </Button>
+              )}
               {userRegistration?.registeredBy !== 'admin' && (
                 <Button
                   fullWidth
@@ -386,7 +404,53 @@ const EventDetail = ({
   )
 }
 
+/**
+ * Estado del jugador en un evento con convocatoria por entrenamientos.
+ * Antes de publicar sólo está "inscrito"; después es titular o suplente con puesto.
+ */
+const ConvocatoriaStatus = ({ event, registration }) => {
+  if (!event.convocatoriaPublishedAt || registration?.selected === undefined) {
+    return (
+      <div className="space-y-2">
+        <Button fullWidth size="lg" variant="success" disabled>
+          Inscripción registrada
+        </Button>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center">
+          El profesor publicará la convocatoria: juegan los {event.maxSlots} jugadores con más
+          entrenamientos ({ATTENDANCE_WINDOWS[event.attendanceWindow || 'mes']?.label.toLowerCase()}).
+        </p>
+      </div>
+    )
+  }
+
+  if (registration.selected) {
+    return (
+      <div className="space-y-2">
+        <Button fullWidth size="lg" variant="success" disabled>
+          ¡Estás convocado!
+        </Button>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center">
+          {registration.trainingCount} entrenamientos en la ventana · puesto #{registration.selectionRank}
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-2">
+      <Button fullWidth size="lg" variant="secondary" disabled icon={Clock}>
+        Suplente #{registration.selectionRank - (event.maxSlots || 0)}
+      </Button>
+      <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center">
+        Entras si se baja alguien. Suma entrenamientos para subir en la lista
+        ({registration.trainingCount} en la ventana actual).
+      </p>
+    </div>
+  )
+}
+
 const WaitlistAction = ({ eventId, isAuthenticated }) => {
+  const requireAuth = useRequireAuth()
   const { entry, position, isLoading } = useMyWaitlistPosition(eventId)
   const join = useJoinWaitlist()
   const leave = useLeaveWaitlist()
@@ -394,11 +458,11 @@ const WaitlistAction = ({ eventId, isAuthenticated }) => {
   if (!isAuthenticated) {
     return (
       <div className="space-y-2 text-center">
-        <Button fullWidth size="lg" variant="secondary" disabled icon={Clock}>
-          Cupos agotados
+        <Button fullWidth size="lg" variant="secondary" icon={Clock} onClick={() => requireAuth()}>
+          Iniciar sesión para la lista de espera
         </Button>
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Inicia sesión para apuntarte a la lista de espera.
+          Cupos agotados — entra con tu número y te apuntamos.
         </p>
       </div>
     )

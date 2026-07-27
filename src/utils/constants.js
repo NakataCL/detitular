@@ -54,6 +54,31 @@ export const EVENT_TYPES = {
   }
 }
 
+// Modo de selección de convocados (lo elige el profesor por evento)
+export const SELECTION_MODES = {
+  orden: {
+    label: 'Orden de inscripción',
+    short: 'Por orden',
+    description: 'Juegan los primeros en inscribirse. Al llenarse los cupos se abre lista de espera.'
+  },
+  entrenamiento: {
+    label: 'Prioridad por entrenamientos',
+    short: 'Por entrenamientos',
+    description: 'La inscripción queda abierta sin tope y el profesor publica la convocatoria: juegan los que más entrenaron.'
+  }
+}
+
+// Ventana de tiempo para contar entrenamientos (modo "entrenamiento")
+// ponytail: ventana móvil (últimos N días), no semana/mes calendario — un partido
+// de lunes dejaría la semana calendario casi vacía. Cambiar a startOfWeek/startOfMonth si se decide lo contrario.
+export const ATTENDANCE_WINDOWS = {
+  semana: { label: 'Última semana', days: 7 },
+  mes: { label: 'Último mes', days: 30 }
+}
+
+export const DEFAULT_SELECTION_MODE = 'orden'
+export const DEFAULT_ATTENDANCE_WINDOW = 'mes'
+
 // Estados de inscripción
 export const REGISTRATION_STATUS = {
   abierto: {

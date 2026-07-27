@@ -5,6 +5,7 @@ import { Search, Calendar, User } from '../../utils/icons'
 import { useActiveEvents } from '../../hooks/useEvents'
 import { useAllUsers } from '../../hooks/usePlayer'
 import { useAuth } from '../../context/AuthContext'
+import { userContact } from '../../utils/helpers'
 
 const DEBOUNCE_MS = 300
 
@@ -56,7 +57,8 @@ const GlobalSearch = () => {
           .filter(u =>
             u.nombre?.toLowerCase().includes(q) ||
             u.displayName?.toLowerCase().includes(q) ||
-            u.email?.toLowerCase().includes(q)
+            u.email?.toLowerCase().includes(q) ||
+            u.telefono?.includes(q.replace(/\D/g, ''))
           )
           .slice(0, 5)
       : []
@@ -119,8 +121,8 @@ const GlobalSearch = () => {
                     <ResultRow
                       key={u.id}
                       icon={User}
-                      title={u.nombre || u.displayName || u.email}
-                      subtitle={u.email}
+                      title={u.nombre || u.displayName || userContact(u)}
+                      subtitle={userContact(u)}
                       onClick={() => handleSelect('/admin/usuarios')}
                     />
                   ))}

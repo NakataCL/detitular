@@ -14,6 +14,7 @@ import Experiencias from './pages/Experiencias'
 import AlbumDetalle from './pages/AlbumDetalle'
 import Perfil from './pages/Perfil'
 import Login from './pages/Login'
+import Onboarding from './pages/Onboarding'
 import { AdminDashboard, AdminEventos, AdminUsuarios } from './pages/admin'
 
 // Crear cliente de React Query
@@ -33,8 +34,16 @@ function App() {
       <AuthProvider>
         <BrowserRouter basename={import.meta.env.BASE_URL}>
           <Routes>
-            {/* Ruta de login fuera del layout */}
+            {/* Login y alta de perfil, fuera del layout */}
             <Route path="/login" element={<Login />} />
+            <Route
+              path="/bienvenido"
+              element={
+                <ProtectedRoute redirectTo="/login">
+                  <Onboarding />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Rutas con layout */}
             <Route element={<Layout />}>

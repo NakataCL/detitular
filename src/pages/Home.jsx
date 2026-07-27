@@ -2,11 +2,11 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { format } from 'date-fns'
+import { format, isToday } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Calendar, ArrowRight, LogIn } from '../utils/icons'
+import { Calendar, ArrowRight, LogIn, ClipboardList } from '../utils/icons'
 import { Button, Skeleton } from '../components/ui'
-import { EventCard } from '../components/events'
+import { EventCard, EventAttendeesManager } from '../components/events'
 import { useNextEvent, useActiveEvents } from '../hooks/useEvents'
 import { useStats } from '../hooks/useStats'
 import { useExperiences } from '../hooks/useExperiences'
@@ -16,19 +16,14 @@ import { getTimeRemaining } from '../utils/helpers'
 
 const Home = () => {
   const navigate = useNavigate()
-  const { isAuthenticated, userData, user, login } = useAuth()
+  const { isAuthenticated, isAdmin, userData, user } = useAuth()
+  const [markingAttendance, setMarkingAttendance] = useState(false)
   const { data: nextEvent, isLoading: loadingNext } = useNextEvent()
   const { data: activeEvents, isLoading: loadingEvents } = useActiveEvents()
   const { data: stats } = useStats({ enabled: isAuthenticated })
   const { data: experiences } = useExperiences()
 
-  const handleLogin = async () => {
-    try {
-      await login()
-    } catch (error) {
-      console.error('Error al iniciar sesión:', error)
-    }
-  }
+  const handleLogin = () => navigate('/login')
 
   const firstName =
     userData?.nombre?.split(' ')[0] ||
@@ -61,6 +56,7 @@ const Home = () => {
           loading={loadingNext}
           onView={() => nextEvent && navigate(`/eventos/${nextEvent.id}`)}
           onBrowse={() => navigate('/eventos')}
+          onMarkAttendance={isAdmin ? () => setMarkingAttendance(true) : null}
         />
       </motion.div>
 
@@ -188,25 +184,33 @@ const Home = () => {
                 ¿Listo para jugar?
               </h3>
               <p className="text-sm text-zinc-300 mb-6">
-                Únete a {APP_NAME} y empieza a inscribirte en eventos.
+                Únete a {APP_NAME} con tu número de celular y empieza a
+                inscribirte en eventos.
               </p>
               <Button
                 onClick={handleLogin}
                 icon={LogIn}
                 className="bg-white text-zinc-900 hover:bg-zinc-100"
               >
-                Continuar con Google
+                Entrar con mi celular
               </Button>
             </div>
           </div>
         </motion.section>
+      )}
+
+      {markingAttendance && nextEvent && (
+        <EventAttendeesManager
+          eventId={nextEvent.id}
+          onClose={() => setMarkingAttendance(false)}
+        />
       )}
     </div>
   )
 }
 
 // Hero del próximo evento — fullbleed oscuro con countdown gigante
-const NextEventHero = ({ event, loading, onView, onBrowse }) => {
+const NextEventHero = ({ event, loading, onView, onBrowse, onMarkAttendance }) => {
   if (loading) {
     return (
       <section className="rounded-3xl bg-zinc-900 dark:bg-black p-7 md:p-10 min-h-[280px] animate-pulse" />
@@ -294,6 +298,17 @@ const NextEventHero = ({ event, loading, onView, onBrowse }) => {
           >
             Ver detalles
           </Button>
+          {/* Pasar lista: sólo admin y sólo el día del evento */}
+          {onMarkAttendance && isToday(eventDate) && (
+            <Button
+              size="sm"
+              onClick={onMarkAttendance}
+              icon={ClipboardList}
+              className="bg-white/10 text-white hover:bg-white/20"
+            >
+              Pasar lista
+            </Button>
+          )}
         </div>
       </div>
     </section>

@@ -5,10 +5,11 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { MapPin, Users, Lock, Clock } from '../../utils/icons'
 import { Badge, Button } from '../ui'
-import { getEventStatus, getTimeRemaining } from '../../utils/helpers'
+import { getEventStatus, getTimeRemaining, isPriorityMode } from '../../utils/helpers'
 import { EVENT_TYPES, REGISTRATION_STATUS } from '../../utils/constants'
 import { useMyWaitlist, useJoinWaitlist, useLeaveWaitlist } from '../../hooks/useWaitlist'
 import { useAuth } from '../../context/AuthContext'
+import { useRequireAuth } from '../../hooks/useRequireAuth'
 import toast from 'react-hot-toast'
 
 const EventCard = ({
@@ -22,6 +23,7 @@ const EventCard = ({
   const navigate = useNavigate()
 
   const eventType = EVENT_TYPES[event.type] || EVENT_TYPES.otro
+  const priorityMode = isPriorityMode(event)
   const status = getEventStatus(event, userRegistration)
   const statusConfig = REGISTRATION_STATUS[status]
   const eventDate = event.date?.toDate ? event.date.toDate() : new Date(event.date)
@@ -92,6 +94,7 @@ const EventCard = ({
               max={max}
               fillPct={fillPct}
               fillColor={fillColor}
+              priority={priorityMode}
               compact
             />
           </div>
@@ -183,6 +186,7 @@ const EventCard = ({
             max={max}
             fillPct={fillPct}
             fillColor={fillColor}
+            priority={priorityMode}
           />
         </div>
 
@@ -242,6 +246,7 @@ const EventCard = ({
 
 const WaitlistButton = ({ eventId }) => {
   const { isAuthenticated } = useAuth()
+  const requireAuth = useRequireAuth()
   const { data: entries } = useMyWaitlist()
   const join = useJoinWaitlist()
   const leave = useLeaveWaitlist()
@@ -250,7 +255,7 @@ const WaitlistButton = ({ eventId }) => {
 
   if (!isAuthenticated) {
     return (
-      <Button fullWidth variant="outline" icon={Clock} disabled>
+      <Button fullWidth variant="outline" icon={Clock} onClick={() => requireAuth()}>
         Inicia sesión para apuntarte
       </Button>
     )
@@ -304,7 +309,7 @@ const WaitlistButton = ({ eventId }) => {
   )
 }
 
-const SlotBar = ({ free, current, max, fillPct, fillColor, compact = false }) => {
+const SlotBar = ({ free, current, max, fillPct, fillColor, priority = false, compact = false }) => {
   if (max === 0) {
     return (
       <p className={`${compact ? 'text-xs' : 'text-sm'} text-zinc-500 dark:text-zinc-400`}>
@@ -319,7 +324,11 @@ const SlotBar = ({ free, current, max, fillPct, fillColor, compact = false }) =>
         <span
           className={`${compact ? 'text-xs' : 'text-sm'} font-semibold text-zinc-900 dark:text-zinc-50`}
         >
-          {free === 0 ? 'Cupos agotados' : `${free} ${free === 1 ? 'cupo' : 'cupos'} disponibles`}
+          {priority
+            ? `${current} inscritos · ${max} juegan`
+            : free === 0
+              ? 'Cupos agotados'
+              : `${free} ${free === 1 ? 'cupo' : 'cupos'} disponibles`}
         </span>
         <span className={`${compact ? 'text-[10px]' : 'text-xs'} text-zinc-500 dark:text-zinc-400 tabular-nums`}>
           {current}/{max}

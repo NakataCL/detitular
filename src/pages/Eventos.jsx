@@ -8,13 +8,13 @@ import Input from '../components/ui/Input'
 import { EventCard, EventCalendar, RegistrationConfirmSheet } from '../components/events'
 import { useActiveEvents } from '../hooks/useEvents'
 import { useMyRegistrations, useCreateRegistration } from '../hooks/useRegistrations'
-import { useAuth } from '../context/AuthContext'
+import { useRequireAuth } from '../hooks/useRequireAuth'
 import { EVENT_TYPES } from '../utils/constants'
 import toast from 'react-hot-toast'
 
 const Eventos = () => {
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuth()
+  const requireAuth = useRequireAuth()
   const [viewMode, setViewMode] = useState('list')
   const [filterType, setFilterType] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
@@ -38,10 +38,7 @@ const Eventos = () => {
   }) || []
 
   const handleRegister = async (eventId) => {
-    if (!isAuthenticated) {
-      toast.error('Debes iniciar sesión para inscribirte')
-      return
-    }
+    if (!requireAuth()) return
 
     try {
       await createRegistration.mutateAsync(eventId)
