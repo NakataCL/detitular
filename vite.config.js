@@ -12,7 +12,8 @@ const buildTime = new Date().toISOString()
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/detitular/',
+  // GitHub Pages sirve bajo /detitular/; Vercel sirve en la raíz.
+  base: process.env.VERCEL ? '/' : '/detitular/',
   define: {
     __APP_VERSION__: JSON.stringify(gitSha),
     __BUILD_TIME__: JSON.stringify(buildTime),
