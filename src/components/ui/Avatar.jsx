@@ -23,7 +23,7 @@ const Avatar = ({
   const bgColor = stringToColor(name || alt)
 
   return (
-    <div className={`relative inline-block ${className}`}>
+    <div className={`relative inline-block rounded-full ${className}`}>
       {src ? (
         <img
           src={src}

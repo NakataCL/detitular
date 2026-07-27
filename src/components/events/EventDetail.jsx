@@ -359,7 +359,6 @@ const EventDetail = ({
                   src={reg.userPhoto}
                   name={reg.userName}
                   size="sm"
-                  className="ring-2 ring-white dark:ring-zinc-900"
                 />
               ))}
               {registrations.length > 8 && (

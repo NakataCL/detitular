@@ -36,7 +36,6 @@ const PlayerCard = ({ player, user }) => {
             src={player?.photoURL || user?.photoURL}
             name={displayName}
             size="xl"
-            className="ring-2 ring-white/15"
           />
           <div className="flex-1 min-w-0">
             <h2 className="font-display text-3xl md:text-4xl leading-tight tracking-tight truncate">
