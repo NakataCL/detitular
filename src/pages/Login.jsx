@@ -82,7 +82,9 @@ const Login = () => {
       await loginWithGoogle()
       toast.success('¡Bienvenido!')
     } catch (error) {
-      if (error.code !== 'auth/popup-closed-by-user') {
+      if (error.code === 'auth/not-admin') {
+        toast.error(error.message)
+      } else if (error.code !== 'auth/popup-closed-by-user') {
         toast.error('Error al iniciar sesión')
       }
     }

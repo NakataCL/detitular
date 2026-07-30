@@ -26,6 +26,14 @@ const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@academia.com'
 export const signInWithGoogle = async () => {
   try {
     const result = await signInWithPopup(auth, googleProvider)
+    // Google es la puerta de administración: cualquier otra cuenta se rechaza
+    // ANTES de handleUserAfterAuth, para no dejarle un doc en `users`.
+    if (result.user.email !== ADMIN_EMAIL) {
+      await firebaseSignOut(auth)
+      const denied = new Error('Esta cuenta no tiene acceso de administrador')
+      denied.code = 'auth/not-admin'
+      throw denied
+    }
     await handleUserAfterAuth(result.user)
     return result.user
   } catch (error) {
