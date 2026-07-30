@@ -28,10 +28,11 @@ service cloud.firestore {
       allow create: if request.auth.uid == userId
         && request.resource.data.role == 'jugador';
 
-      // Edición propia: no puede tocar su rol, su plan ni su uid.
+      // Edición propia: no puede tocar su rol, su plan, su uid ni su contador
+      // de asistencias (lo setea el admin y lo mueve markAttendance).
       allow update: if request.auth.uid == userId
         && !request.resource.data.diff(resource.data).affectedKeys()
-             .hasAny(['role', 'plan', 'uid']);
+             .hasAny(['role', 'plan', 'uid', 'asistencias']);
 
       allow write: if isAdmin();
     }

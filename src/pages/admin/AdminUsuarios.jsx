@@ -19,7 +19,8 @@ import {
   useUpdateUserPlan,
   useUpdateUserRole,
   useToggleUserDisabled,
-  useDeleteUser
+  useDeleteUser,
+  useSetAsistencias
 } from '../../hooks/usePlayer'
 import { useAuth } from '../../context/AuthContext'
 import { PLANS, POSITIONS } from '../../utils/constants'
@@ -41,6 +42,7 @@ const AdminUsuarios = () => {
   const updateRole = useUpdateUserRole()
   const toggleDisabled = useToggleUserDisabled()
   const deleteUserMutation = useDeleteUser()
+  const setAsistencias = useSetAsistencias()
 
   // Filtrar usuarios
   const filteredUsers = users?.filter(user => {
@@ -52,6 +54,15 @@ const AdminUsuarios = () => {
       user.telefono?.includes(term.replace(/\D/g, ''))
     )
   }) || []
+
+  const handleSetAsistencias = async (user, asistencias) => {
+    try {
+      await setAsistencias.mutateAsync({ userId: user.id, asistencias })
+      toast.success('Asistencias actualizadas')
+    } catch {
+      toast.error('Error al actualizar asistencias')
+    }
+  }
 
   const handleToggleRole = (user) => {
     const newRole = user.role === 'admin' ? 'jugador' : 'admin'
@@ -217,6 +228,7 @@ const AdminUsuarios = () => {
               onDeactivatePlan={() => handleDeactivatePlan(user)}
               onToggleDisabled={() => handleToggleDisabled(user)}
               onDelete={() => setUserToDelete(user)}
+              onSetAsistencias={(n) => handleSetAsistencias(user, n)}
             />
           ))}
         </div>
@@ -303,7 +315,8 @@ const UserCard = ({
   onManagePlan,
   onDeactivatePlan,
   onToggleDisabled,
-  onDelete
+  onDelete,
+  onSetAsistencias
 }) => {
   const hasPlan = user.plan?.active
   const isDisabled = !!user.disabled
@@ -414,6 +427,12 @@ const UserCard = ({
             )
           })()}
 
+          <AsistenciasField
+            key={user.asistencias ?? 0}
+            user={user}
+            onSave={onSetAsistencias}
+          />
+
           {/* Mobile: acciones (arriba) + plan (abajo derecha) en stack */}
           <div className="mt-3 space-y-2 sm:hidden">
             <div className="flex justify-start">{actionButtons}</div>
@@ -428,6 +447,50 @@ const UserCard = ({
         </div>
       </div>
     </Card>
+  )
+}
+
+/**
+ * Contador histórico de asistencias, editable a mano: así se arranca con el
+ * registro que venía del Excel. A partir de ahí lo mueve `markAttendance`.
+ * Guarda al salir del campo (o con Enter) y sólo si el número cambió.
+ * Se remonta vía `key` cuando cambia el valor guardado, así no hace falta un
+ * efecto para resincronizar el input.
+ */
+const AsistenciasField = ({ user, onSave }) => {
+  const guardado = user.asistencias ?? 0
+  const [value, setValue] = useState(String(guardado))
+
+  const commit = () => {
+    const n = Math.floor(Number(value))
+    if (value.trim() === '' || !Number.isFinite(n) || n < 0) {
+      setValue(String(guardado))
+      return
+    }
+    setValue(String(n))
+    if (n !== guardado) onSave(n)
+  }
+
+  return (
+    <div className="mt-2 flex items-center gap-2">
+      <label
+        htmlFor={`asistencias-${user.id}`}
+        className="text-xs text-zinc-400"
+      >
+        Asistencias
+      </label>
+      <input
+        id={`asistencias-${user.id}`}
+        type="number"
+        min="0"
+        inputMode="numeric"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+        className="w-16 px-2 py-1 text-sm tabular-nums rounded-md border border-zinc-200/60 dark:border-zinc-800 bg-transparent text-zinc-900 dark:text-zinc-50 focus:outline-none focus:border-primary-500"
+      />
+    </div>
   )
 }
 
