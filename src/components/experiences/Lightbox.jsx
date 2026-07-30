@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronLeft, ChevronRight, Download, ZoomIn, ZoomOut } from '../../utils/icons'
+import { X, ChevronLeft, ChevronRight, Download, ZoomIn, ZoomOut, Trash2 } from '../../utils/icons'
 import { downloadImage } from '../../utils/helpers'
 import toast from 'react-hot-toast'
 
@@ -12,7 +12,8 @@ const Lightbox = ({
   images = [],
   currentIndex = 0,
   onIndexChange = null,
-  albumTitle = null
+  albumTitle = null,
+  onDelete = null
 }) => {
   const [index, setIndex] = useState(currentIndex)
   const [zoom, setZoom] = useState(1)
@@ -138,8 +139,22 @@ const Lightbox = ({
               >
                 <Download className="w-5 h-5" />
               </button>
+              {onDelete && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onDelete(currentImage)
+                  }}
+                  aria-label="Eliminar foto"
+                  title="Eliminar foto"
+                  className="p-2 rounded-lg bg-white/10 hover:bg-red-500 text-white transition-colors"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              )}
               <button
                 onClick={onClose}
+                aria-label="Cerrar"
                 className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white"
               >
                 <X className="w-5 h-5" />

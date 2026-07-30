@@ -17,7 +17,7 @@ import {
 } from '../utils/icons'
 import { shareAlbum } from '../utils/share'
 import { downloadAlbumZip } from '../utils/zip'
-import { Button, Skeleton, EmptyState, Badge } from '../components/ui'
+import { Button, Skeleton, EmptyState } from '../components/ui'
 import {
   Lightbox,
   AlbumCreateModal,
@@ -29,7 +29,9 @@ import {
   useAlbumExperiences,
   useUnclassifiedExperiences
 } from '../hooks/useAlbums'
+import { useDeleteExperience } from '../hooks/useExperiences'
 import { useEvent } from '../hooks/useEvents'
+import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import {
   EXPERIENCE_CATEGORIES,
@@ -102,6 +104,24 @@ const AlbumDetalle = () => {
     })
   }, [])
 
+  const { mutate: deletePhoto } = useDeleteExperience()
+
+  // Borrado de una foto desde el lightbox. Al quitarla, la lista se corre sola:
+  // solo hay que cerrar si era la última y acotar el índice si era la del final.
+  const handleDeletePhoto = (photo) => {
+    if (!photo) return
+    if (!window.confirm('¿Eliminar esta foto? Esta acción no se puede deshacer.')) return
+    deletePhoto(photo, {
+      onSuccess: () => {
+        toast.success('Foto eliminada')
+        const remaining = imageExperiences.length - 1
+        if (remaining <= 0) setLightboxOpen(false)
+        else setLightboxIndex((i) => Math.min(i, remaining - 1))
+      },
+      onError: () => toast.error('No se pudo eliminar la foto')
+    })
+  }
+
   const selectAll = useCallback(() => {
     setSelectedIds(new Set(experiences.map((e) => e.id)))
   }, [experiences])
@@ -153,61 +173,65 @@ const AlbumDetalle = () => {
 
   return (
     <div className="pb-32">
-      {/* Hero banner */}
-      <div
-        className={`relative bg-gradient-to-br ${gradient} text-white px-4 sm:px-6 md:px-12 pt-6 pb-8`}
-      >
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          aria-label="Volver"
-          className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-black/25 hover:bg-black/40 backdrop-blur-sm transition-colors mb-3"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-        <div className="max-w-5xl mx-auto">
-          <h1 className="font-display text-3xl md:text-4xl tracking-wide leading-tight">
-            {album.title}
-          </h1>
-          <p className="text-sm text-white/85 mt-2">
-            {album.date ? formatDate(album.date, "d 'de' MMMM 'de' yyyy") + ' · ' : ''}
-            {categoryLabel} · {imageExperiences.length} fotos
-            {videoCount > 0 ? ` · ${videoCount} videos` : ''}
-          </p>
+      {/* Hero */}
+      <div className={`bg-gradient-to-br ${gradient}`}>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-12 pt-5 pb-7 text-white">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label="Volver"
+            className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-black/25 hover:bg-black/40 transition-colors focus:outline-none focus:ring-2 focus:ring-white/70"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+
+          <div className="mt-6">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-white/20 text-xs font-semibold">
+                {categoryLabel}
+              </span>
+              {album.isPublic === false && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/20 text-xs font-semibold">
+                  <Lock className="w-3 h-3" /> Privado
+                </span>
+              )}
+            </div>
+            <h1 className="font-display text-4xl md:text-5xl tracking-wide leading-none text-balance">
+              {album.title}
+            </h1>
+            <p className="text-sm text-white/80 mt-2">
+              {album.date ? formatDate(album.date, "d 'de' MMMM 'de' yyyy") + ' · ' : ''}
+              {imageExperiences.length} fotos
+              {videoCount > 0 ? ` · ${videoCount} videos` : ''}
+              {album.eventId && (
+                <>
+                  {' · '}
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/eventos/${album.eventId}`)}
+                    className="font-medium underline underline-offset-2 hover:text-white"
+                  >
+                    {linkedEvent?.title || 'Ver evento'}
+                  </button>
+                </>
+              )}
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Toolbar */}
-      <div className="px-4 sm:px-6 md:px-12 max-w-5xl mx-auto -mt-4">
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 p-3 flex items-center gap-2 flex-wrap shadow-sm">
-          <Badge variant={album.category}>{categoryLabel}</Badge>
-          {album.isPublic === false && (
-            <Badge variant="secondary" className="inline-flex items-center gap-1">
-              <Lock className="w-3 h-3" /> Privado
-            </Badge>
-          )}
-          {album.eventId && (
-            <button
-              type="button"
-              onClick={() => navigate(`/eventos/${album.eventId}`)}
-              className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              {linkedEvent?.title
-                ? `Vinculado a ${linkedEvent.title} →`
-                : 'Vinculado al evento →'}
-            </button>
-          )}
-
-          <div className="flex-1" />
-
+      {/* Barra de acciones */}
+      <div className="border-b border-zinc-200 dark:border-zinc-800">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-12 py-2 flex items-center gap-1 overflow-x-auto no-scrollbar">
           {!isUnclassified && album.isPublic && (
             <Button
               variant="ghost"
               size="sm"
               icon={Share2}
+              aria-label="Compartir"
               onClick={() => shareAlbum(album)}
             >
-              Compartir
+              <span className="hidden sm:inline">Compartir</span>
             </Button>
           )}
 
@@ -216,6 +240,7 @@ const AlbumDetalle = () => {
               variant="ghost"
               size="sm"
               icon={Download}
+              aria-label="Descargar álbum"
               loading={downloading}
               onClick={async () => {
                 setDownloading(true)
@@ -226,34 +251,37 @@ const AlbumDetalle = () => {
                 }
               }}
             >
-              Descargar
+              <span className="hidden sm:inline">Descargar</span>
             </Button>
           )}
+
+          <div className="flex-1 min-w-2" />
 
           {isAdmin && !isUnclassified && (
             <>
               <Button
-                variant="outline"
+                variant="ghost"
+                size="sm"
+                icon={Edit2}
+                aria-label="Editar álbum"
+                onClick={() => setEditOpen(true)}
+              >
+                <span className="hidden sm:inline">Editar</span>
+              </Button>
+              <Button
+                variant="primary"
                 size="sm"
                 icon={Plus}
                 onClick={() => setUploaderOpen(true)}
               >
                 Subir más
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={Edit2}
-                onClick={() => setEditOpen(true)}
-              >
-                Editar
-              </Button>
             </>
           )}
 
           {isAdmin && isUnclassified && experiences.length > 0 && (
             <Button
-              variant={selectMode ? 'ghost' : 'outline'}
+              variant={selectMode ? 'ghost' : 'primary'}
               size="sm"
               icon={selectMode ? X : Check}
               onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
@@ -262,9 +290,11 @@ const AlbumDetalle = () => {
             </Button>
           )}
         </div>
+      </div>
 
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-12">
         {album.description && (
-          <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-4 leading-relaxed">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-4 leading-relaxed max-w-[70ch]">
             {album.description}
           </p>
         )}
@@ -384,6 +414,7 @@ const AlbumDetalle = () => {
         currentIndex={lightboxIndex}
         onIndexChange={setLightboxIndex}
         albumTitle={album.title}
+        onDelete={isAdmin ? handleDeletePhoto : null}
       />
 
       {/* Sheet "Mover a álbum" (T06) */}
