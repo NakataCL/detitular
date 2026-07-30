@@ -4,6 +4,12 @@
 export const APP_NAME = import.meta.env?.VITE_APP_NAME || 'Academia de Fútbol'
 export const APP_SHORT_NAME = import.meta.env?.VITE_APP_SHORT_NAME || 'FutbolAcademy'
 
+// Redes
+export const INSTAGRAM_USER = 'de.titular'
+export const INSTAGRAM_URL = `https://www.instagram.com/${INSTAGRAM_USER}`
+export const YOUTUBE_USER = 'efisalud2026'
+export const YOUTUBE_URL = `https://www.youtube.com/@${YOUTUBE_USER}`
+
 // Colores del tema
 export const THEME_COLORS = {
   primary: {

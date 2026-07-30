@@ -9,11 +9,13 @@ import {
   Users,
   Shield,
   ChevronLeft,
-  LogOut
+  LogOut,
+  Instagram,
+  Youtube
 } from '../../utils/icons'
 import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
-import { APP_NAME } from '../../utils/constants'
+import { APP_NAME, INSTAGRAM_URL, INSTAGRAM_USER, YOUTUBE_URL, YOUTUBE_USER } from '../../utils/constants'
 import Avatar from '../ui/Avatar'
 import logo from '../../assets/logo.png'
 
@@ -32,6 +34,11 @@ const Sidebar = () => {
   const visibleItems = navItems.filter(
     item => item.public || isAuthenticated
   )
+
+  const socialItems = [
+    { url: INSTAGRAM_URL, icon: Instagram, label: 'Instagram', handle: `@${INSTAGRAM_USER}` },
+    { url: YOUTUBE_URL, icon: Youtube, label: 'YouTube', handle: `@${YOUTUBE_USER}` }
+  ]
 
   const handleLogout = async () => {
     try {
@@ -100,6 +107,20 @@ const Sidebar = () => {
             </NavLink>
           )
         })}
+
+        {socialItems.map((item) => (
+          <a
+            key={item.url}
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`${item.label}: ${item.handle}`}
+            className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition-colors text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-900"
+          >
+            <item.icon className="w-[18px] h-[18px] flex-shrink-0" />
+            {!collapsed && <span>{item.label}</span>}
+          </a>
+        ))}
 
         {isAuthenticated && (
           <>
