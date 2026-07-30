@@ -132,6 +132,25 @@ export const useToggleUserDisabled = () => {
 }
 
 /**
+ * Hook admin: setea a mano el contador histórico de asistencias del jugador.
+ * Sirve para arrancar con lo que traía del Excel; a partir de ahí lo mueve
+ * `markAttendance`.
+ */
+export const useSetAsistencias = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ userId, asistencias }) => updateUser(userId, { asistencias }),
+    onSuccess: (_, { userId }) => {
+      queryClient.invalidateQueries({ queryKey: ['user', userId] })
+      queryClient.invalidateQueries({ queryKey: ['player', userId] })
+      queryClient.invalidateQueries({ queryKey: ['playerStats', userId] })
+      queryClient.invalidateQueries({ queryKey: ['users', 'all'] })
+    }
+  })
+}
+
+/**
  * Hook para eliminar un usuario (admin)
  */
 export const useDeleteUser = () => {

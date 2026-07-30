@@ -140,10 +140,13 @@ export const useMarkAttendance = () => {
 
   return useMutation({
     mutationFn: ({ registrationId, attended }) => markAttendance(registrationId, attended),
-    onSuccess: (_, { eventId }) => {
+    onSuccess: (_, { eventId, userId }) => {
       queryClient.invalidateQueries({ queryKey: ['registrations', 'event', eventId] })
       // La asistencia alimenta el ranking de convocatorias por entrenamientos.
       queryClient.invalidateQueries({ queryKey: ['trainingCounts'] })
+      // ...y mueve el contador histórico del jugador.
+      queryClient.invalidateQueries({ queryKey: ['playerStats', userId] })
+      queryClient.invalidateQueries({ queryKey: ['users', 'all'] })
     }
   })
 }

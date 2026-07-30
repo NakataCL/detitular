@@ -494,13 +494,35 @@ export const adminRemoveUserFromEvent = async (registrationId, eventId, userId) 
 }
 
 /**
- * Marca asistencia en una inscripción
+ * Marca asistencia en una inscripción y mueve el contador histórico del jugador
+ * (`users.asistencias`). En transacción y sólo si el valor cambia de verdad, para
+ * que un doble clic o dos admins a la vez no cuenten dos veces.
  */
 export const markAttendance = async (registrationId, attended) => {
   const registrationRef = doc(db, 'registrations', registrationId)
-  await updateDoc(registrationRef, {
-    attended,
-    attendedAt: attended ? serverTimestamp() : null
+
+  await runTransaction(db, async (tx) => {
+    const regSnap = await tx.get(registrationRef)
+    if (!regSnap.exists()) throw new Error('La inscripción no existe')
+
+    const reg = regSnap.data()
+    if (!!reg.attended === attended) return
+
+    const userRef = doc(db, 'users', reg.userId)
+    const userSnap = await tx.get(userRef)
+
+    tx.update(registrationRef, {
+      attended,
+      attendedAt: attended ? serverTimestamp() : null
+    })
+
+    if (userSnap.exists()) {
+      const actual = userSnap.data().asistencias || 0
+      tx.update(userRef, {
+        asistencias: Math.max(0, actual + (attended ? 1 : -1)),
+        updatedAt: serverTimestamp()
+      })
+    }
   })
 }
 
@@ -1004,15 +1026,23 @@ export const getStats = async () => {
 }
 
 /**
- * Obtiene estadísticas de un jugador
+ * Obtiene estadísticas de un jugador.
+ *
+ * `attendedEvents` sale del contador histórico `users.asistencias` (arrastra lo
+ * que venía del Excel previo a la app); el % y la racha se calculan sólo sobre
+ * las inscripciones registradas aquí, que es de lo único que hay denominador.
  */
 export const getPlayerStats = async (userId) => {
-  const registrations = await getUserRegistrations(userId)
+  const [registrations, user] = await Promise.all([
+    getUserRegistrations(userId),
+    getUser(userId)
+  ])
 
   const totalRegistrations = registrations.length
-  const attendedEvents = registrations.filter(r => r.attended).length
+  const attendedInApp = registrations.filter(r => r.attended).length
+  const attendedEvents = user?.asistencias ?? attendedInApp
   const attendanceRate = totalRegistrations > 0
-    ? Math.round((attendedEvents / totalRegistrations) * 100)
+    ? Math.round((attendedInApp / totalRegistrations) * 100)
     : 0
 
   // Calcular racha de asistencia

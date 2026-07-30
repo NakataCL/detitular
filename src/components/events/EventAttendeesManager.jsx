@@ -129,7 +129,8 @@ const EventAttendeesManager = ({ eventId, onClose }) => {
       await markAttendance.mutateAsync({
         registrationId: registration.id,
         attended: !registration.attended,
-        eventId
+        eventId,
+        userId: registration.userId
       })
     } catch {
       toast.error('Error al actualizar asistencia')
