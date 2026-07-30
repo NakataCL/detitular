@@ -91,6 +91,10 @@ export const useDeleteExperience = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['experiences'] })
+      // El borrado cambia itemCount/previewUrls del álbum y su grilla
+      queryClient.invalidateQueries({ queryKey: ['albums'] })
+      queryClient.invalidateQueries({ queryKey: ['album'] })
+      queryClient.invalidateQueries({ queryKey: ['unclassified-experiences'] })
     }
   })
 }

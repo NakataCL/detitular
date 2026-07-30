@@ -38,6 +38,18 @@
   *::after {
     box-sizing: border-box;
   }
+
+  /* Tailwind v4 quita el cursor pointer de los botones en su preflight */
+  button:not(:disabled),
+  [role='button']:not(:disabled),
+  label[for],
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
 }
 
 @layer base {
